@@ -1,22 +1,25 @@
 package com.imorning.mediaplayer.activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceView;
 
 import com.imorning.mediaplayer.R;
-import com.imorning.mediaplayer.utils.Player;
+import com.imorning.mediaplayer.player.video.VideoPlayer;
+import com.imorning.mediaplayer.view.FVideoView;
 
 public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";
-    private Player player;
+
+
+    private FVideoView videoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        player = Player.getPlayer();
-        Log.d(TAG, "onCreate: " + player.getVersion());
+        videoView = findViewById(R.id.testVideoPlayer);
+        VideoPlayer.getPlayer().play("/sdcard/test.mp4", videoView.getHolder().getSurface());
     }
 }

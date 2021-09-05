@@ -1,5 +1,7 @@
 package com.imorning.mediaplayer.utils;
 
+import android.view.Surface;
+
 public class Jni {
     static {
         System.loadLibrary("avcodec");
@@ -13,9 +15,18 @@ public class Jni {
 
     }
 
-    private native String getVersion();
+    /**
+     * get avcodec configure
+     *
+     * @return avcodec configure
+     */
+    public native String getVersion();
 
-    public String avcodec_configuration() {
-        return getVersion();
-    }
+    /**
+     * 播放视频流
+     *
+     * @param videoPath（本地）视频文件路径
+     * @param surface
+     */
+    public native void playVideo(String videoPath, Surface surface);
 }

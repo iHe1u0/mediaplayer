@@ -7,7 +7,8 @@ set(distribution_DIR ../../../../libs)
 
 add_library(ffmpegutils
         SHARED
-        src/main/cpp/ffmpegutils.cpp)
+        src/main/cpp/ffmpegutils.cpp
+        src/main/cpp/videoplayer.cpp)
 
 add_library(avcodec
         SHARED
@@ -68,4 +69,5 @@ target_link_libraries(ffmpegutils
         postproc
         swresample
         swscale
-        ${log-lib})
+        ${log-lib}
+        -landroid)
