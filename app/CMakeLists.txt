@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.4.1)
 find_library(log-lib
         log)
 
+find_library(android
+        android)
+
 set(distribution_DIR ../../../../libs)
 
 add_library(ffmpegutils
@@ -70,4 +73,4 @@ target_link_libraries(ffmpegutils
         swresample
         swscale
         ${log-lib}
-        -landroid)
+        ${android})

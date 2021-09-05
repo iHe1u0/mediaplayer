@@ -20,6 +20,6 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         videoView = findViewById(R.id.testVideoPlayer);
-        VideoPlayer.getPlayer().play("/sdcard/test.mp4", videoView.getHolder().getSurface());
+        videoView.play("/sdcard/test.mp4");
     }
 }
