@@ -8,20 +8,20 @@ android {
 
     defaultConfig {
         applicationId "com.imorning.mediaplayer"
-        minSdkVersion 23
+        minSdkVersion 22
         targetSdkVersion 31
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        sourceSets {
-            main {
-                jniLibs.srcDirs = ['libs']
+        // CMake 编译配置
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
             }
         }
-
         ndk {
-            abiFilters 'arm64-v8a'
+            ldLibs "log", "z", "m"
         }
 
     }
@@ -34,26 +34,35 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
-    buildFeatures{
+    buildFeatures {
         viewBinding true
     }
 
+    // CMakeLists 配置路径
     externalNativeBuild {
         cmake {
             path file('CMakeLists.txt')
         }
     }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'org.jetbrains:annotations:21.0.1'
+    implementation 'org.jetbrains:annotations:22.0.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'

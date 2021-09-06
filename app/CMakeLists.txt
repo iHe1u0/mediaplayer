@@ -1,76 +1,78 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-find_library(log-lib
-        log)
 
-find_library(android
-        android)
+set(FFMPEG_LIB_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})
 
-set(distribution_DIR ../../../../libs)
+include_directories(
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/include
+)
 
-add_library(ffmpegutils
-        SHARED
-        src/main/cpp/ffmpegutils.cpp
-        src/main/cpp/videoplayer.cpp)
+add_library(avcodec SHARED IMPORTED)
+set_target_properties(avcodec PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libavcodec.so)
 
-add_library(avcodec
-        SHARED
-        IMPORTED)
-set_target_properties(avcodec
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libavcodec.so)
+add_library(avformat SHARED IMPORTED)
+set_target_properties(avformat PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libavformat.so)
 
-add_library(avfilter
-        SHARED
-        IMPORTED)
-set_target_properties(avfilter
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libavfilter.so)
+add_library(avutil SHARED IMPORTED)
+set_target_properties(avutil PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libavutil.so)
 
-add_library(avformat
-        SHARED
-        IMPORTED)
-set_target_properties(avformat
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libavformat.so)
+add_library(postproc SHARED IMPORTED)
+set_target_properties(postproc PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libpostproc.so)
 
-add_library(avutil
-        SHARED
-        IMPORTED)
-set_target_properties(avutil
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libavutil.so)
+add_library(swresample SHARED IMPORTED)
+set_target_properties(swresample PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libswresample.so)
 
-add_library(postproc
-        SHARED
-        IMPORTED)
-set_target_properties(postproc
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libpostproc.so)
+add_library(swscale SHARED IMPORTED)
+set_target_properties(swscale PROPERTIES IMPORTED_LOCATION
+        ${FFMPEG_LIB_DIR}/libswscale.so)
 
-add_library(swresample
-        SHARED
-        IMPORTED)
-set_target_properties(swresample
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libswresample.so)
 
-add_library(swscale
-        SHARED
-        IMPORTED)
-set_target_properties(swscale
-        PROPERTIES IMPORTED_LOCATION
-        ${distribution_DIR}/armeabi/libswscale.so)
+# build application's shared lib
+#add_library(play_video SHARED
+#        ${CMAKE_SOURCE_DIR}/src/main/cpp/play_video.cpp)
+#add_library(decode_video SHARED
+#        ${CMAKE_SOURCE_DIR}/src/main/cpp/decode_video.cpp)
+add_library(audioPlayer SHARED
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/player/audio/play_audio.cpp
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/player/audio/AudioDevice.c
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/player/audio/FFmpegAudioPlay.c)
 
-include_directories(libs/include)
 
-target_link_libraries(ffmpegutils
+#特别注意，你想生成几个so，就要写几个link，写在一个link里面是错误的
+#target_link_libraries(play_video
+#        log
+#        android
+#        avcodec
+#        avformat
+#        avutil
+#        swresample
+#        swscale-4
+#        )
+#target_link_libraries(decode_video
+#        log
+#        android
+#        avcodec
+#        avformat
+#        avutil
+#        postproc
+#        swresample
+#        swscale
+#        )
+
+#注意加入opensl es
+target_link_libraries(audioPlayer
+        log
+        OpenSLES
+        android
         avcodec
-        avfilter
         avformat
         avutil
         postproc
         swresample
         swscale
-        ${log-lib}
-        ${android})
+        )

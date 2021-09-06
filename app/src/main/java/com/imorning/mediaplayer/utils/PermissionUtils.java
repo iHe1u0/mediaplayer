@@ -1,6 +1,7 @@
 package com.imorning.mediaplayer.utils;
 
 import android.content.pm.PackageManager;
+import android.os.Build;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -23,7 +24,7 @@ public class PermissionUtils {
      * @param permission the permission needed.
      */
     public void requestPermission(String permission) {
-        if (permission == null) {
+        if (permission == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return;
         }
         if (!hasPermission(permission)) {
