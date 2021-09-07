@@ -2,8 +2,8 @@
 // Created by iMorning on 2021/9/7.
 //
 
-#ifndef MEDIAPLAYER_LOG_H
-#define MEDIAPLAYER_LOG_H
+#ifndef LOG_H
+#define LOG_H
 
 
 #define LOGN (void) 0
@@ -12,13 +12,13 @@
 
 #include <android/log.h>
 
-#define LOG_VERBOSE        1
-#define LOG_DEBUG        2
-#define LOG_INFO        3
-#define LOG_WARNING        4
-#define LOG_ERROR        5
-#define LOG_FATAL        6
-#define LOG_SILENT        7
+#define LOG_VERBOSE 1
+#define LOG_DEBUG   2
+#define LOG_INFO    3
+#define LOG_WARNING 4
+#define LOG_ERROR   5
+#define LOG_FATAL   6
+#define LOG_SILENT  7
 
 #ifndef LOG_TAG
 //#define LOG_TAG __FILE__ // 输出C++文件名
@@ -108,4 +108,4 @@
 #endif // ANDROID_PROJECT
 
 
-#endif //MEDIAPLAYER_LOG_H
+#endif //LOG_H

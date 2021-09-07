@@ -2,11 +2,11 @@
 // Created by iMorning on 2021/9/7.
 //
 
-#include "log.h"
-#include "FFmpegAudioPlay.h"
-#include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
-#include "libswresample/swresample.h"
+#include <log.h>
+#include <FFmpegAudioPlay.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswresample/swresample.h>
 #include <libavutil/opt.h>
 
 uint8_t *outputBuffer;

@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.imorning.mediaplayer.R;
 import com.imorning.mediaplayer.player.audio.AudioPlayer;
+import com.imorning.mediaplayer.utils.YuvUtils;
 
 public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";
@@ -16,14 +17,17 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         audioPlayer = AudioPlayer.getPlayer();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int code = audioPlayer.play(Environment.getExternalStorageDirectory().getPath()
-                        + "/夏日回音.flac");
-                Log.d(TAG, "run: " + code);
-            }
+        /**
+         * new Thread(new Runnable() {
+        @Override public void run() {
+        int code = audioPlayer.play(Environment.getExternalStorageDirectory().getPath()
+        + "/test.mp3");
+        Log.d(TAG, "run: " + code);
+        }
         }).start();
+         **/
+        YuvUtils yuvUtils = new YuvUtils();
+        yuvUtils.sayHello();
     }
 
     @Override

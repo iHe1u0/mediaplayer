@@ -18,10 +18,12 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++17"
+                abiFilters 'arm64-v8a'
             }
         }
         ndk {
             ldLibs "log", "z", "m"
+            abiFilters 'arm64-v8a'
         }
 
     }
