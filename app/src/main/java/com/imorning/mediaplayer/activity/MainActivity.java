@@ -6,10 +6,13 @@ import android.util.Log;
 
 import com.imorning.mediaplayer.R;
 import com.imorning.mediaplayer.player.audio.AudioPlayer;
-import com.imorning.mediaplayer.utils.YuvUtils;
+import com.imorning.mediaplayer.player.video.VideoPlayer;
 
-public class MainActivity extends BaseActivity {
+import org.libsdl.app.SDLActivity;
+
+public class MainActivity extends SDLActivity {
     private static final String TAG = "MainActivity";
+    private final String fileRootPath = Environment.getExternalStorageDirectory().getPath() + "/1/test/test.";
     private AudioPlayer audioPlayer;
 
     @Override
@@ -17,22 +20,23 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         audioPlayer = AudioPlayer.getPlayer();
-        /**
-         * new Thread(new Runnable() {
-        @Override public void run() {
-        int code = audioPlayer.play(Environment.getExternalStorageDirectory().getPath()
-        + "/test.mp3");
-        Log.d(TAG, "run: " + code);
-        }
-        }).start();
-         **/
-        YuvUtils yuvUtils = new YuvUtils();
-        yuvUtils.sayHello();
+        int code = VideoPlayer.nativeInit(fileRootPath + "mp4");
+        Log.d(TAG, "onCreate: " + code);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int code = audioPlayer.play(fileRootPath + "mp3");
+                Log.d(TAG, "run: " + code);
+            }
+        });//.start();
+
     }
 
     @Override
     protected void onDestroy() {
-        audioPlayer.stop();
+        if (audioPlayer != null) {
+            audioPlayer.stop();
+        }
         super.onDestroy();
 
     }

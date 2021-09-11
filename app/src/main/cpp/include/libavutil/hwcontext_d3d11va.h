@@ -92,9 +92,7 @@ typedef struct AVD3D11VADeviceContext {
      * locking implementation.
      */
     void (*lock)(void *lock_ctx);
-
     void (*unlock)(void *lock_ctx);
-
     void *lock_ctx;
 } AVD3D11VADeviceContext;
 

@@ -446,7 +446,6 @@ int av_set_options_string(void *ctx, const char *opts,
 int av_opt_set_from_string(void *ctx, const char *opts,
                            const char *const *shorthand,
                            const char *key_val_sep, const char *pairs_sep);
-
 /**
  * Free all allocated objects in obj.
  */

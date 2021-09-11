@@ -75,9 +75,7 @@ int av_sha_init(struct AVSHA *context, int bits);
  * @param len     input data length
  */
 #if FF_API_CRYPTO_SIZE_T
-
 void av_sha_update(struct AVSHA *ctx, const uint8_t *data, unsigned int len);
-
 #else
 void av_sha_update(struct AVSHA *ctx, const uint8_t *data, size_t len);
 #endif

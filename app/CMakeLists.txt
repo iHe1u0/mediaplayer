@@ -11,6 +11,14 @@ add_library(avcodec SHARED IMPORTED)
 set_target_properties(avcodec PROPERTIES IMPORTED_LOCATION
         ${LIB_DIR}/libavcodec.so)
 
+add_library(avdevice SHARED IMPORTED)
+set_target_properties(avdevice PROPERTIES IMPORTED_LOCATION
+        ${LIB_DIR}/libavdevice.so)
+
+add_library(avfilter SHARED IMPORTED)
+set_target_properties(avfilter PROPERTIES IMPORTED_LOCATION
+        ${LIB_DIR}/libavfilter.so)
+
 add_library(avformat SHARED IMPORTED)
 set_target_properties(avformat PROPERTIES IMPORTED_LOCATION
         ${LIB_DIR}/libavformat.so)
@@ -35,12 +43,15 @@ add_library(yuv SHARED IMPORTED)
 set_target_properties(yuv PROPERTIES IMPORTED_LOCATION
         ${LIB_DIR}/libyuv.so)
 
+add_library(sdl SHARED IMPORTED)
+set_target_properties(sdl PROPERTIES IMPORTED_LOCATION
+        ${LIB_DIR}/libSDL2.so)
 
-# build application's shared lib
-#add_library(play_video SHARED
-#        ${CMAKE_SOURCE_DIR}/src/main/cpp/play_video.cpp)
-#add_library(decode_video SHARED
-#        ${CMAKE_SOURCE_DIR}/src/main/cpp/decode_video.cpp)
+add_library(hidapi SHARED IMPORTED)
+set_target_properties(hidapi PROPERTIES IMPORTED_LOCATION
+        ${LIB_DIR}/libhidapi.so)
+
+
 add_library(audioPlayer SHARED
         ${CMAKE_SOURCE_DIR}/src/main/cpp/player/audio/play_audio.cpp
         ${CMAKE_SOURCE_DIR}/src/main/cpp/player/audio/AudioDevice.c
@@ -48,38 +59,39 @@ add_library(audioPlayer SHARED
 
 add_library(yuvutils SHARED
         ${CMAKE_SOURCE_DIR}/src/main/cpp/yuv/yuvutils.cpp)
-#特别注意，你想生成几个so，就要写几个link，写在一个link里面是错误的
-#target_link_libraries(play_video
-#        log
-#        android
-#        avcodec
-#        avformat
-#        avutil
-#        swresample
-#        swscale-4
-#        )
-#target_link_libraries(decode_video
-#        log
-#        android
-#        avcodec
-#        avformat
-#        avutil
-#        postproc
-#        swresample
-#        swscale
-#        )
 
-#注意加入opensl es
+add_library(videoPlayer SHARED
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/player/video/play_video.cpp)
+
 target_link_libraries(audioPlayer
         log
         OpenSLES
         android
         avcodec
+        avdevice
+        avfilter
         avformat
         avutil
         postproc
         swresample
         swscale
+        )
+
+target_link_libraries(videoPlayer
+        log
+        OpenSLES
+        android
+        jnigraphics
+        avcodec
+        avdevice
+        avfilter
+        avformat
+        avutil
+        postproc
+        swresample
+        swscale
+        sdl
+        hidapi
         )
 
 target_link_libraries(yuvutils

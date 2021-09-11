@@ -80,11 +80,9 @@ void pp_postprocess(const uint8_t *src[3], const int srcStride[3],
  * @param quality a number from 0 to PP_QUALITY_MAX
  */
 pp_mode *pp_get_mode_by_name_and_quality(const char *name, int quality);
-
 void pp_free_mode(pp_mode *mode);
 
 pp_context *pp_get_context(int width, int height, int flags);
-
 void pp_free_context(pp_context *ppContext);
 
 #define PP_CPU_CAPS_MMX   0x80000000

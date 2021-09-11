@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include "version.h"
-
 /**
  * @defgroup lavu_hmac HMAC
  * @ingroup lavu_crypto

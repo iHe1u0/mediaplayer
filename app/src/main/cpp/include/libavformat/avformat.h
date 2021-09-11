@@ -418,8 +418,7 @@ struct AVDeviceCapabilitiesQuery;
  * @param size desired payload size
  * @return >0 (read size) if OK, AVERROR_xxx otherwise
  */
-int av_get_packet(AVIOContext * s, AVPacket * pkt, int
-size);
+int av_get_packet(AVIOContext *s, AVPacket *pkt, int size);
 
 
 /**
@@ -436,8 +435,7 @@ size);
  * @return >0 (read size) if OK, AVERROR_xxx otherwise, previous data
  *         will not be lost even if an error occurs.
  */
-int av_append_packet(AVIOContext * s, AVPacket * pkt, int
-size);
+int av_append_packet(AVIOContext *s, AVPacket *pkt, int size);
 
 /*************************************************/
 /* input/output formats */
@@ -541,7 +539,6 @@ typedef struct AVOutputFormat {
     int priv_data_size;
 
     int (*write_header)(struct AVFormatContext *);
-
     /**
      * Write a packet. If AVFMT_ALLOW_FLUSH is set in flags,
      * pkt can be NULL in order to flush data buffered in the muxer.
@@ -550,15 +547,12 @@ typedef struct AVOutputFormat {
      * data.
      */
     int (*write_packet)(struct AVFormatContext *, AVPacket *pkt);
-
     int (*write_trailer)(struct AVFormatContext *);
-
     /**
      * Currently only used to set pixel format if not YUV420P.
      */
     int (*interleave_packet)(struct AVFormatContext *, AVPacket *out,
                              AVPacket *in, int flush);
-
     /**
      * Test if the given codec can be stored in this container.
      *
@@ -570,7 +564,6 @@ typedef struct AVOutputFormat {
 
     void (*get_output_timestamp)(struct AVFormatContext *s, int stream,
                                  int64_t *dts, int64_t *wall);
-
     /**
      * Allows sending messages from application to device.
      */
@@ -607,7 +600,6 @@ typedef struct AVOutputFormat {
      */
     int
     (*free_device_capabilities)(struct AVFormatContext *s, struct AVDeviceCapabilitiesQuery *caps);
-
     enum AVCodecID data_codec; /**< default data codec */
     /**
      * Initialize format. May allocate data here, and set any AVFormatContext or
@@ -619,7 +611,6 @@ typedef struct AVOutputFormat {
      * Any allocations made here must be freed in deinit().
      */
     int (*init)(struct AVFormatContext *);
-
     /**
      * Deinitialize format. If present, this is called whenever the muxer is being
      * destroyed, regardless of whether or not the header has been written.
@@ -629,7 +620,6 @@ typedef struct AVOutputFormat {
      * This is called if init() fails as well.
      */
     void (*deinit)(struct AVFormatContext *);
-
     /**
      * Set up any necessary bitstream filtering and extract any extra data needed
      * for the global header.
@@ -2179,7 +2169,6 @@ int av_stream_add_side_data(AVStream *st, enum AVPacketSideDataType type,
  */
 uint8_t *av_stream_new_side_data(AVStream *stream,
                                  enum AVPacketSideDataType type, int size);
-
 /**
  * Get side information from stream.
  *
@@ -2275,22 +2264,16 @@ AVInputFormat *av_probe_input_format3(AVProbeData *pd, int is_opened, int *score
  *         the maximal score is AVPROBE_SCORE_MAX
  * AVERROR code otherwise
  */
-int av_probe_input_buffer2(AVIOContext * pb, AVInputFormat * *fmt,
-const char *url,
-void *logctx,
-unsigned int offset,
-unsigned int max_probe_size
-);
+int av_probe_input_buffer2(AVIOContext *pb, AVInputFormat **fmt,
+                           const char *url, void *logctx,
+                           unsigned int offset, unsigned int max_probe_size);
 
 /**
  * Like av_probe_input_buffer2() but returns 0 on success
  */
-int av_probe_input_buffer(AVIOContext * pb, AVInputFormat * *fmt,
-const char *url,
-void *logctx,
-unsigned int offset,
-unsigned int max_probe_size
-);
+int av_probe_input_buffer(AVIOContext *pb, AVInputFormat **fmt,
+                          const char *url, void *logctx,
+                          unsigned int offset, unsigned int max_probe_size);
 
 /**
  * Open an input stream and read the header. The codecs are not opened.
@@ -2979,17 +2962,14 @@ int avformat_query_codec(const AVOutputFormat *ofmt, enum AVCodecID codec_id,
  * @return the table mapping RIFF FourCCs for video to libavcodec AVCodecID.
  */
 const struct AVCodecTag *avformat_get_riff_video_tags(void);
-
 /**
  * @return the table mapping RIFF FourCCs for audio to AVCodecID.
  */
 const struct AVCodecTag *avformat_get_riff_audio_tags(void);
-
 /**
  * @return the table mapping MOV FourCCs for video to libavcodec AVCodecID.
  */
 const struct AVCodecTag *avformat_get_mov_video_tags(void);
-
 /**
  * @return the table mapping MOV FourCCs for audio to AVCodecID.
  */

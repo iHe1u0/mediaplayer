@@ -42,7 +42,6 @@ struct AVCAST5;
   * To free the struct: av_free(ptr)
   */
 struct AVCAST5 *av_cast5_alloc(void);
-
 /**
   * Initialize an AVCAST5 context.
   *
