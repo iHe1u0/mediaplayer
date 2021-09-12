@@ -21,9 +21,12 @@
 #define LOG_SILENT  7
 
 #ifndef LOG_TAG
-//#define LOG_TAG __FILE__ // 输出C++文件名
-#define LOG_TAG "native_player"
+#define LOG_TAG __FILE__ // 输出C++文件名
+//#define LOG_TAG "native_player"
 #endif
+
+
+void log_ffmpeg_error(int errorCode);
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_VERBOSE
@@ -105,7 +108,7 @@
 
 #define LOGA(...) LOGN
 
-#endif // ANDROID_PROJECT
 
+#endif // ANDROID_PROJECT
 
 #endif //LOG_H

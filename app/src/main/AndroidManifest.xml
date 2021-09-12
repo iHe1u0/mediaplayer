@@ -15,16 +15,19 @@
 
     <application
         android:allowBackup="false"
+        android:extractNativeLibs="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:preserveLegacyExternalStorage="true"
         android:requestLegacyExternalStorage="true"
+        android:requestRawExternalStorageAccess="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MediaPlayer"
-        tools:targetApi="r">
+        android:usesCleartextTraffic="true"
+        tools:targetApi="s">
         <activity
             android:name=".activity.VideoPlayerActivity"
             android:exported="true" />

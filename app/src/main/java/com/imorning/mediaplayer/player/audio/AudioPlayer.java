@@ -1,26 +1,36 @@
 package com.imorning.mediaplayer.player.audio;
 
-public class AudioPlayer {
+import com.imorning.mediaplayer.player.Player;
+
+public class AudioPlayer extends Player {
+
     private static final String TAG = "AudioPlayer";
-    private volatile static AudioPlayer player;
 
-    static {
-        System.loadLibrary("audioPlayer");
+    @Override
+    public void play(String path) {
+        _play(path);
     }
 
-    public static AudioPlayer getPlayer() {
-        if (player == null) {
-            synchronized (AudioPlayer.class) {
-                if (player == null) {
-                    player = new AudioPlayer();
-                }
-            }
-        }
-        return player;
+    @Override
+    public void pause() {
+        _pause();
     }
 
-    public native int play(String url);
+    @Override
+    public void stop() {
+        _stop();
+    }
 
-    public native int stop();
+    @Override
+    public void seekTo(long time) {
+        _seekTo(time);
+    }
 
+    private native int _play(String path);
+
+    private native int _pause();
+
+    private native int _stop();
+
+    private native int _seekTo(long time);
 }

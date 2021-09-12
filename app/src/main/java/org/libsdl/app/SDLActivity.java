@@ -851,9 +851,7 @@ public class SDLActivity extends BaseActivity implements View.OnSystemUiVisibili
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(TAG, "Device: " + Build.DEVICE);
         Log.v(TAG, "Model: " + Build.MODEL);
-        Log.v(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
-
         try {
             Thread.currentThread().setName("SDLActivity");
         } catch (Exception e) {

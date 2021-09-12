@@ -7,9 +7,6 @@ import com.imorning.mediaplayer.R;
 import org.libsdl.app.SDLActivity;
 
 public class VideoPlayerActivity extends SDLActivity {
-    static {
-        System.loadLibrary("videoPlayer");
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
