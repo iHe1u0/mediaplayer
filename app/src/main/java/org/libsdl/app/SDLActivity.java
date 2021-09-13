@@ -56,6 +56,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.imorning.mediaplayer.activity.BaseActivity;
+import com.imorning.mediaplayer.utils.JniUtils;
 
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -817,15 +818,7 @@ public class SDLActivity extends BaseActivity implements View.OnSystemUiVisibili
      * @return names of shared libraries to be loaded (e.g. "SDL2", "main").
      */
     protected String[] getLibraries() {
-        return new String[]{
-                "hidapi",
-                "SDL2",
-                // "SDL2_image",
-                // "SDL2_mixer",
-                // "SDL2_net",
-                // "SDL2_ttf",
-                "videoPlayer"
-        };
+        return JniUtils.libraries;
     }
 
     // Load the .so

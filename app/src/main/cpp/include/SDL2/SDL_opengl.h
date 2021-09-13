@@ -831,7 +831,7 @@ GLAPI void GLAPIENTRY glPolygonOffset(GLfloat factor, GLfloat units);
 
 GLAPI void GLAPIENTRY glPolygonStipple(const GLubyte *mask);
 
-GLAPI void GLAPIENTRY glGetPolygonStipple(GLubyte *mask);
+GLAPI void GLAPIENTRY glGetPolygonStipple(GLubyte * mask);
 
 GLAPI void GLAPIENTRY glEdgeFlag(GLboolean flag);
 

@@ -3,9 +3,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})
 
-include_directories(
-        ${CMAKE_SOURCE_DIR}/src/main/cpp/include
-)
+include_directories(${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 
 # ffmpeg library
 add_library(avcodec SHARED IMPORTED)
@@ -50,7 +48,8 @@ set_target_properties(hidapi PROPERTIES IMPORTED_LOCATION
 # sdl library end
 
 add_library(Player SHARED
-        src/main/cpp/main.cpp)
+        src/main/cpp/main.cpp
+        src/main/cpp/player/audio/audio_player.cpp)
 target_link_libraries(Player
         log
         OpenSLES

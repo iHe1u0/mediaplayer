@@ -16,4 +16,5 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         new PermissionUtils(this).requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
+
 }

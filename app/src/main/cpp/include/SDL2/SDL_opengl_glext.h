@@ -138,7 +138,8 @@ GL_BGR                            0x80E0
 GL_BGRA                           0x80E1
 #define
 GL_MAX_ELEMENTS_VERTICES          0x80E8
-#define GL_MAX_ELEMENTS_INDICES           0x80E9
+#define
+GL_MAX_ELEMENTS_INDICES           0x80E9
 #define
 GL_CLAMP_TO_EDGE                  0x812F
 #define
