@@ -12,296 +12,148 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <log.h>
 }
 
 #include <audio_player.h>
-#include <log.h>
 
 #include <SDL2/SDL.h>
 #include <jni.h>
 #include <string>
 #include <android/native_window_jni.h>
 #include <unistd.h>
-#include "SLES/OpenSLES.h"
-#include "SLES/OpenSLES_Android.h"
-
-SLObjectItf engineObject = NULL;//用SLObjectItf声明引擎接口对象
-SLEngineItf engineEngine = NULL;//声明具体的引擎对象
 
 
-SLObjectItf outputMixObject = NULL;//用SLObjectItf创建混音器接口对象
-SLEnvironmentalReverbItf outputMixEnvironmentalReverb = NULL; //具体的混音器对象实例
-SLEnvironmentalReverbSettings settings = SL_I3DL2_ENVIRONMENT_PRESET_DEFAULT;//默认情况
-
-
-SLObjectItf audioplayer = NULL;//用SLObjectItf声明播放器接口对象
-SLPlayItf slPlayItf = NULL;//播放器接口
-SLAndroidSimpleBufferQueueItf slBufferQueueItf = NULL;//缓冲区队列接口
-
-
-size_t buffersize = 0;
-void *buffer;
-
-
-//创建引擎
-void createEngine() {
-    slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);//创建引擎
-    (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);//实现engineObject接口对象
-    (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE,
-                                  &engineEngine);//通过引擎调用接口初始化SLEngineItf
+int log_ffmpeg_error(int errorCode) {
+    char *err_buf = new char;
+    av_strerror(errorCode, err_buf, 1024);
+    LOGE("ffmpeg error:%d(%s)", errorCode, err_buf);
+    delete err_buf;
+    return errorCode;
 }
 
-//创建混音器
-void createMixVolume() {
-    (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 0, 0, 0);//用引擎对象创建混音器接口对象
-    (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);//实现混音器接口对象
-    SLresult sLresult = (*outputMixObject)->GetInterface(outputMixObject,
-                                                         SL_IID_ENVIRONMENTALREVERB,
-                                                         &outputMixEnvironmentalReverb);//利用混音器实例对象接口初始化具体的混音器对象
-    //设置
-    if (SL_RESULT_SUCCESS == sLresult) {
-        (*outputMixEnvironmentalReverb)->
-                SetEnvironmentalReverbProperties(outputMixEnvironmentalReverb, &settings);
+int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
+    int status = 0;
+    const char *path = env->GetStringUTFChars(audioPath, 0);
+    //av_register_all();
+    AVFormatContext *pFormatContext = avformat_alloc_context();
+    if ((status = avformat_open_input(&pFormatContext, path, NULL, NULL)) != 0) {
+        return log_ffmpeg_error(status);
     }
-}
-
-AVFormatContext *pFormatCtx;
-AVCodecContext *pCodecCtx;
-AVCodec *pCodex;
-AVPacket *packet;
-AVFrame *frame;
-SwrContext *swrContext;
-uint8_t *out_buffer;
-int out_channer_nb;
-int audio_stream_idx = -1;
-
-//opensl es调用 int * rate,int *channel
-int createFFmpeg(int *rate, int *channel, const char *path) {
-    av_register_all();
-    const char *input = path;
-    pFormatCtx = avformat_alloc_context();
-    LOGE("路径： %s", input);
-    LOGE("xxx %p", pFormatCtx);
-    int error;
-    char buf[] = "";
-    //打开视频地址并获取里面的内容(解封装)
-    if (error = avformat_open_input(&pFormatCtx, input, NULL, NULL) < 0) {
-        av_strerror(error, buf, 1024);
-        // LOGE("%s" ,inputPath)
-        LOGE("Couldn't open file %s: %d(%s)", input, error, buf);
-        // LOGE("%d",error)
-        LOGE("打开视频失败");
+    if ((status = avformat_find_stream_info(pFormatContext, NULL)) < 0) {
+        return log_ffmpeg_error(status);
     }
-    //3.获取视频信息
-    if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
-        LOGE("%s", "获取视频信息失败");
-        return -1;
-    }
-
-
-    int i = 0;
-    for (int i = 0; i < pFormatCtx->nb_streams; ++i) {
-        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-            LOGE("  找到音频id %d", pFormatCtx->streams[i]->codec->codec_type);
-            audio_stream_idx = i;
+    av_dump_format(pFormatContext, 0, path, 0);
+    int audio_index = -1;
+    for (int i = 0; i < pFormatContext->nb_streams; i++) {
+        if (pFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            audio_index = i;
             break;
         }
     }
-// mp3的解码器
-
-//    获取音频编解码器
-    pCodecCtx = pFormatCtx->streams[audio_stream_idx]->codec;
-    LOGE("获取视频编码器上下文 %p  ", pCodecCtx);
-
-    pCodex = avcodec_find_decoder(pCodecCtx->codec_id);
-    LOGE("获取视频编码 %p", pCodex);
-
-    if (avcodec_open2(pCodecCtx, pCodex, NULL) < 0) {
+    if (audio_index == -1) {
+        return log_ffmpeg_error(audio_index);
     }
-    packet = (AVPacket *) av_malloc(sizeof(AVPacket));
-//    av_init_packet(packet);
-//    音频数据
+    AVCodecParameters *pCodecParams = pFormatContext->streams[audio_index]->codecpar;
+    AVCodecID pCodecId = pCodecParams->codec_id;
+    if (pCodecId == NULL) {
+        LOGE("%s", "CodecID == null");
+        return -1;
+    }
+    AVCodec *pCodec = avcodec_find_decoder(pCodecId);
+    if (pCodec == NULL) {
+        LOGE("%s", "没有找到解码器");
+        return -1;
+    }
+    AVCodecContext *pCodecContext = avcodec_alloc_context3(pCodec);
+    if (pCodecContext == NULL) {
+        LOGE("%s", "不能为CodecContext分配内存");
+        return -1;
+    }
+    if ((status = avcodec_parameters_to_context(pCodecContext, pCodecParams)) < 0) {
+        return log_ffmpeg_error(status);
+    }
+    if ((status = avcodec_open2(pCodecContext, pCodec, NULL)) < 0) {
+        return log_ffmpeg_error(status);
+    }
+    AVPacket *avp = av_packet_alloc();
+    AVFrame *avf = av_frame_alloc();
 
-    frame = av_frame_alloc();
+    //frame->16bit 44100 PCM 统一音频采样格式与采样率
+    SwrContext *swr_cxt = swr_alloc();
+    //重采样设置选项-----------------------------------------------------------start
 
-//    mp3  里面所包含的编码格式   转换成  pcm   SwcContext
-    swrContext = swr_alloc();
+    // 输入的采样格式
+    enum AVSampleFormat in_sample_fmt = pCodecContext->sample_fmt;
+    //输出的采样格式
+    enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+    //输入的采样率
+    int in_sample_rate = pCodecContext->sample_rate;
+    LOGD("sample rate = %d \n", in_sample_rate);
+    //输出的采样率
+    int out_sample_rate = 44100;
+    //输入的声道布局
+    uint64_t in_ch_layout = pCodecContext->channel_layout;
+    //输出的声道布局
+    uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
+    //SwrContext 设置参数
+    swr_alloc_set_opts(swr_cxt, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout,
+                       in_sample_fmt, in_sample_rate, 0, NULL);
+    //初始化SwrContext
+    swr_init(swr_cxt);
 
-    int length = 0;
-    int got_frame;
-//    44100*2
-    out_buffer = (uint8_t *) av_malloc(44100 * 2);
-    uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
-//    输出采样位数  16位
-    enum AVSampleFormat out_formart = AV_SAMPLE_FMT_S16;
-//输出的采样率必须与输入相同
-    int out_sample_rate = pCodecCtx->sample_rate;
+    //重采样设置选项-----------------------------------------------------------end
 
+    // 获取输出的声道个数
+    int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
+    jclass clazz = env->GetObjectClass(instance);
+    //调用Java方法MethodID
+    jmethodID methodId = env->GetMethodID(clazz, "createTrack", "(II)V");
+    jmethodID methodID1 = env->GetMethodID(clazz, "playTrack", "([BI)V");
+    //通过methodId调用Java方法
+    env->CallVoidMethod(instance, methodId, 44100, out_channel_nb);
+    //存储pcm数据
+    uint8_t *out_buf = (uint8_t *) av_malloc(2 * 44100);
+    int frame_count = 0;
+    //一帧一帧读取压缩的音频数据AVPacket
+    int ret;
+    while (av_read_frame(pFormatContext, avp) >= 0) {
+        if (avp->stream_index == audio_index) {
+            ret = avcodec_send_packet(pCodecContext, avp);
+            if (ret != 0) {
+                return ret;
+            }
+            while (avcodec_receive_frame(pCodecContext, avf) == 0) {
+                LOGD("正在解码第%d帧", ++frame_count);
+                int len = swr_convert(swr_cxt, &out_buf, 2 * 44100, (const uint8_t **) avf->data,
+                                      avf->nb_samples);
+                //get size of sample
+                int out_buf_size = len * out_channel_nb * av_get_bytes_per_sample(out_sample_fmt);
+                jbyteArray audioArray = env->NewByteArray(out_buf_size);
+                env->SetByteArrayRegion(audioArray, 0, out_buf_size, (const jbyte *) out_buf);
 
-    swr_alloc_set_opts(swrContext, out_ch_layout, out_formart, out_sample_rate,
-                       pCodecCtx->channel_layout, pCodecCtx->sample_fmt, pCodecCtx->sample_rate, 0,
-                       NULL);
-
-    swr_init(swrContext);
-//    获取通道数  2
-    out_channer_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
-    *rate = pCodecCtx->sample_rate;
-    *channel = pCodecCtx->channels;
-    return 0;
-}
-
-//
-int getPcm(void **pcm, size_t *pcm_size) {
-    int frameCount = 0;
-    int got_frame;
-    while (av_read_frame(pFormatCtx, packet) >= 0) {
-        if (packet->stream_index == audio_stream_idx) {
-//            解码  mp3   编码格式frame----pcm   frame
-            avcodec_decode_audio4(pCodecCtx, frame, &got_frame, packet);
-            if (got_frame) {
-                LOGE("解码");
-                /**
-                 * int swr_convert(struct SwrContext *s, uint8_t **out, int out_count,
-                                const uint8_t **in , int in_count);
-                 */
-                swr_convert(swrContext, &out_buffer, 44100 * 2, (const uint8_t **) frame->data,
-                            frame->nb_samples);
-//                缓冲区的大小
-                int size = av_samples_get_buffer_size(NULL, out_channer_nb, frame->nb_samples,
-                                                      AV_SAMPLE_FMT_S16, 1);
-                *pcm = out_buffer;
-                *pcm_size = size;
-                break;
+                env->CallVoidMethod(instance, methodID1, audioArray, out_buf_size);
+                env->DeleteLocalRef(audioArray);
             }
         }
+        av_packet_unref(avp);
     }
+    av_frame_free(&avf);
+    swr_free(&swr_cxt);
+    avcodec_close(pCodecContext);
+    avformat_close_input(&pFormatContext);
+    env->ReleaseStringUTFChars(audioPath, path);
+}
+
+extern "C"
+JNIEXPORT int JNICALL
+Java_com_imorning_mediaplayer_player_audio_AudioPlayer__1play(JNIEnv *env, jobject thiz,
+                                                              jstring path) {
+    return playAudio(env, thiz, path);
+}
+extern "C"
+JNIEXPORT int JNICALL
+Java_com_imorning_mediaplayer_player_audio_AudioPlayer__1stop(JNIEnv *env, jobject thiz) {
+
     return 0;
-}
-
-//将pcm数据添加到缓冲区中
-void getQueueCallBack(SLAndroidSimpleBufferQueueItf slBufferQueueItf, void *context) {
-
-    buffersize = 0;
-
-    getPcm(&buffer, &buffersize);
-    if (buffer != NULL && buffersize != 0) {
-        //将得到的数据加入到队列中
-        (*slBufferQueueItf)->Enqueue(slBufferQueueItf, buffer, buffersize);
-    }
-}
-
-
-//创建播放器
-void createPlayer(const char *path) {
-    //初始化ffmpeg
-    int rate;
-    int channels;
-    createFFmpeg(&rate, &channels, path);
-    LOGE("RATE %d", rate);
-    LOGE("channels %d", channels);
-    /*
-     * typedef struct SLDataLocator_AndroidBufferQueue_ {
-    SLuint32    locatorType;//缓冲区队列类型
-    SLuint32    numBuffers;//buffer位数
-} */
-
-    SLDataLocator_AndroidBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
-    /**
-    typedef struct SLDataFormat_PCM_ {
-        SLuint32 		formatType;  pcm
-        SLuint32 		numChannels;  通道数
-        SLuint32 		samplesPerSec;  采样率
-        SLuint32 		bitsPerSample;  采样位数
-        SLuint32 		containerSize;  包含位数
-        SLuint32 		channelMask;     立体声
-        SLuint32		endianness;    end标志位
-    } SLDataFormat_PCM;
-     */
-    SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM, (SLuint32) channels, (SLuint32) rate * 1000,
-                            SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
-                            SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
-                            SL_BYTEORDER_LITTLEENDIAN};
-
-    /*
-     * typedef struct SLDataSource_ {
-	        void *pLocator;//缓冲区队列
-	        void *pFormat;//数据样式,配置信息
-        } SLDataSource;
-     * */
-    SLDataSource dataSource = {&android_queue, &pcm};
-
-
-    SLDataLocator_OutputMix slDataLocator_outputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
-
-
-    SLDataSink slDataSink = {&slDataLocator_outputMix, NULL};
-
-
-    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
-    const SLboolean req[3] = {SL_BOOLEAN_FALSE, SL_BOOLEAN_FALSE, SL_BOOLEAN_FALSE};
-
-    /*
-     * SLresult (*CreateAudioPlayer) (
-		SLEngineItf self,
-		SLObjectItf * pPlayer,
-		SLDataSource *pAudioSrc,//数据设置
-		SLDataSink *pAudioSnk,//关联混音器
-		SLuint32 numInterfaces,
-		const SLInterfaceID * pInterfaceIds,
-		const SLboolean * pInterfaceRequired
-	);
-     * */
-    LOGE("执行到此处");
-    SLresult status = (*engineEngine)->CreateAudioPlayer(engineEngine, &audioplayer, &dataSource,
-                                                         &slDataSink, 3, ids,
-                                                         req);
-    LOGE("执行到此处:%d", status);
-    (*audioplayer)->Realize(audioplayer, SL_BOOLEAN_FALSE);
-    LOGE("执行到此处3");
-    (*audioplayer)->GetInterface(audioplayer, SL_IID_PLAY, &slPlayItf);//初始化播放器
-    //注册缓冲区,通过缓冲区里面 的数据进行播放
-    (*audioplayer)->GetInterface(audioplayer, SL_IID_BUFFERQUEUE, &slBufferQueueItf);
-    //设置回调接口
-    (*slBufferQueueItf)->RegisterCallback(slBufferQueueItf, getQueueCallBack, NULL);
-    //播放
-    (*slPlayItf)->SetPlayState(slPlayItf, SL_PLAYSTATE_PLAYING);
-
-    //开始播放
-    getQueueCallBack(slBufferQueueItf, NULL);
-
-}
-
-
-void releaseFFmpeg() {
-    av_free_packet(packet);
-    av_free(out_buffer);
-    av_frame_free(&frame);
-    swr_free(&swrContext);
-    avcodec_close(pCodecCtx);
-    avformat_close_input(&pFormatCtx);
-}
-
-//释放资源
-void releaseResource() {
-    if (audioplayer != NULL) {
-        (*audioplayer)->Destroy(audioplayer);
-        audioplayer = NULL;
-        slBufferQueueItf = NULL;
-        slPlayItf = NULL;
-    }
-    if (outputMixObject != NULL) {
-        (*outputMixObject)->Destroy(outputMixObject);
-        outputMixObject = NULL;
-        outputMixEnvironmentalReverb = NULL;
-    }
-    if (engineObject != NULL) {
-        (*engineObject)->Destroy(engineObject);
-        engineObject = NULL;
-        engineEngine = NULL;
-    }
-    releaseFFmpeg();
-}
-
-int play(const char *path) {
-    createPlayer(path);
 }

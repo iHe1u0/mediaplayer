@@ -5,6 +5,14 @@
 #ifndef MEDIAPLAYER_AUDIO_PLAYER_H
 #define MEDIAPLAYER_AUDIO_PLAYER_H
 
-int play(const char *path);
+#include <jni.h>
+
+class AudioPlayer {
+public:
+    const char *audioFilePath;
+};
+
+int playAudio(JNIEnv *env, jobject instance, jstring audioPath);
+
 
 #endif //MEDIAPLAYER_AUDIO_PLAYER_H

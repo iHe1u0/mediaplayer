@@ -2,11 +2,10 @@ package com.imorning.mediaplayer.activity;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.widget.TextView;
 
 import com.imorning.mediaplayer.databinding.ActivityMainBinding;
 import com.imorning.mediaplayer.player.audio.AudioPlayer;
-
-import org.libsdl.app.SDLActivity;
 
 public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";
@@ -19,12 +18,20 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mainBinding.getRoot());
-        AudioPlayer player = new AudioPlayer();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                player.play(fileRootPath + "mp4");
-            }
+        audioPlayer = new AudioPlayer();
+        audioPlayer.setFilePath(fileRootPath + "mp3");
+        mainBinding.tvInfo.setText(audioPlayer.getFilePath());
+        new Thread(() -> {
+            audioPlayer.play();
         }).start();
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (audioPlayer != null) {
+            audioPlayer.stop();
+        }
+        super.onDestroy();
     }
 }

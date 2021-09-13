@@ -2035,7 +2035,7 @@ attribute_deprecated
 void av_register_all(void);
 
 attribute_deprecated
-void av_register_input_format(AVInputFormat *format);
+void av_register_input_format();
 attribute_deprecated
 void av_register_output_format(AVOutputFormat *format);
 #endif

@@ -5,8 +5,11 @@ import com.imorning.mediaplayer.player.Player;
 public class VideoPlayer extends Player {
 
     @Override
-    public void play(String path) {
-        _play(path);
+    public void play() {
+        if (getFilePath() == null) {
+            throw new NullPointerException("File path is null.");
+        }
+        _play(getFilePath());
     }
 
     @Override

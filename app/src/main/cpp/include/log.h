@@ -2,6 +2,8 @@
 // Created by iMorning on 2021/9/7.
 //
 
+#include <string.h>
+
 #ifndef LOG_H
 #define LOG_H
 
@@ -21,59 +23,59 @@
 #define LOG_SILENT  7
 
 #ifndef LOG_TAG
-#define LOG_TAG __FILE__ // 输出C++文件名
-//#define LOG_TAG "native_player"
+//#define LOG_TAG __FILE__ // 输出C++文件名
+
+#define CPP_FILE(x) strrchr(x,'/')?strrchr(x,'/')+1:x
+#define LOG_TAG CPP_FILE( __FILE__ )
+
 #endif
 
-
-void log_ffmpeg_error(int errorCode);
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_VERBOSE
 #endif
 
-#define LOGP(level, fmt, ...) \
-        __android_log_print(level, LOG_TAG, "%s:" fmt, \
-            __PRETTY_FUNCTION__, ##__VA_ARGS__)
+#define LOG_PRINT(level, fmt, ...) __android_log_print(level, LOG_TAG, "%d:" fmt, __LINE__, ##__VA_ARGS__)
+// __android_log_print(level, LOG_TAG, "%s:" fmt,  __PRETTY_FUNCTION__, ##__VA_ARGS__)
 
 #if LOG_VERBOSE >= LOG_LEVEL
 #define LOGV(fmt, ...) \
-        LOGP(ANDROID_LOG_VERBOSE, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_VERBOSE, fmt, ##__VA_ARGS__)
 #else
 #define LOGV(...) LOGN
 #endif
 
 #if LOG_DEBUG >= LOG_LEVEL
 #define LOGD(fmt, ...) \
-        LOGP(ANDROID_LOG_DEBUG, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_DEBUG, fmt, ##__VA_ARGS__)
 #else
 #define LOGD(...) LOGN
 #endif
 
 #if LOG_INFO >= LOG_LEVEL
 #define LOGI(fmt, ...) \
-        LOGP(ANDROID_LOG_INFO, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_INFO, fmt, ##__VA_ARGS__)
 #else
 #define LOGI(...) LOGN
 #endif
 
 #if LOG_WARNING >= LOG_LEVEL
 #define LOGW(fmt, ...) \
-        LOGP(ANDROID_LOG_WARN, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_WARN, fmt, ##__VA_ARGS__)
 #else
 #define LOGW(...) LOGN
 #endif
 
 #if LOG_ERROR >= LOG_LEVEL
 #define LOGE(fmt, ...) \
-        LOGP(ANDROID_LOG_ERROR, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_ERROR, fmt, ##__VA_ARGS__)
 #else
 #define LOGE(...) LOGN
 #endif
 
 #if LOG_FATAL >= LOG_LEVEL
 #define LOGF(fmt, ...) \
-        LOGP(ANDROID_LOG_FATAL, fmt, ##__VA_ARGS__)
+        LOG_PRINT(ANDROID_LOG_FATAL, fmt, ##__VA_ARGS__)
 #else
 #define LOGF(...) LOGN
 #endif
@@ -92,19 +94,19 @@ void log_ffmpeg_error(int errorCode);
 #else
 #include <stdio.h>
 
-#define LOGP(fmt, ...) printf("%s line:%d " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOG_PRINT(fmt, ...) printf("%s line:%d " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 
-#define LOGV(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGV(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
-#define LOGD(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGD(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
-#define LOGI(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGI(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
-#define LOGW(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGW(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
-#define LOGE(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGE(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
-#define LOGF(fmt, ...) LOGP(fmt, ##__VA_ARGS__)
+#define LOGF(fmt, ...) LOG_PRINT(fmt, ##__VA_ARGS__)
 
 #define LOGA(...) LOGN
 
