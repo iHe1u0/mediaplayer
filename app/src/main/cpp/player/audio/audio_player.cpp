@@ -24,10 +24,10 @@ extern "C" {
 #include <unistd.h>
 
 
-int log_ffmpeg_error(int errorCode) {
+int log_ffmpeg_error(int errorCode, int line) {
     char *err_buf = new char;
     av_strerror(errorCode, err_buf, 1024);
-    LOGE("ffmpeg error:%d(%s)", errorCode, err_buf);
+    LOGE("ffmpeg error:%d(%s),line:%d", errorCode, err_buf, line);
     delete err_buf;
     return errorCode;
 }
@@ -35,13 +35,13 @@ int log_ffmpeg_error(int errorCode) {
 int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
     int status = 0;
     const char *path = env->GetStringUTFChars(audioPath, 0);
-    //av_register_all();
+    av_register_all();
     AVFormatContext *pFormatContext = avformat_alloc_context();
     if ((status = avformat_open_input(&pFormatContext, path, NULL, NULL)) != 0) {
-        return log_ffmpeg_error(status);
+        return log_ffmpeg_error(status, code_line);
     }
     if ((status = avformat_find_stream_info(pFormatContext, NULL)) < 0) {
-        return log_ffmpeg_error(status);
+        return log_ffmpeg_error(status, code_line);
     }
     av_dump_format(pFormatContext, 0, path, 0);
     int audio_index = -1;
@@ -52,7 +52,7 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
         }
     }
     if (audio_index == -1) {
-        return log_ffmpeg_error(audio_index);
+        return -1;
     }
     AVCodecParameters *pCodecParams = pFormatContext->streams[audio_index]->codecpar;
     AVCodecID pCodecId = pCodecParams->codec_id;
@@ -71,10 +71,10 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
         return -1;
     }
     if ((status = avcodec_parameters_to_context(pCodecContext, pCodecParams)) < 0) {
-        return log_ffmpeg_error(status);
+        return log_ffmpeg_error(status, code_line);
     }
     if ((status = avcodec_open2(pCodecContext, pCodec, NULL)) < 0) {
-        return log_ffmpeg_error(status);
+        return log_ffmpeg_error(status, code_line);
     }
     AVPacket *avp = av_packet_alloc();
     AVFrame *avf = av_frame_alloc();

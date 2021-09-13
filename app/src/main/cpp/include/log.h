@@ -22,6 +22,8 @@
 #define LOG_FATAL   6
 #define LOG_SILENT  7
 
+#define code_line __LINE__
+
 #ifndef LOG_TAG
 //#define LOG_TAG __FILE__ // 输出C++文件名
 
@@ -30,12 +32,11 @@
 
 #endif
 
-
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_VERBOSE
 #endif
 
-#define LOG_PRINT(level, fmt, ...) __android_log_print(level, LOG_TAG, "%d:" fmt, __LINE__, ##__VA_ARGS__)
+#define LOG_PRINT(level, fmt, ...) __android_log_print(level, LOG_TAG, "%d:" fmt, code_line, ##__VA_ARGS__)
 // __android_log_print(level, LOG_TAG, "%s:" fmt,  __PRETTY_FUNCTION__, ##__VA_ARGS__)
 
 #if LOG_VERBOSE >= LOG_LEVEL
