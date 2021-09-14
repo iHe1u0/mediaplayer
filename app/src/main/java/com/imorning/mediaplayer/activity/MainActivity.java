@@ -19,8 +19,8 @@ public class MainActivity extends BaseActivity {
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mainBinding.getRoot());
         audioPlayer = new AudioPlayer();
-        audioPlayer.setFilePath(fileRootPath + "flac");
-        mainBinding.tvInfo.setText(audioPlayer.getFilePath());
+        audioPlayer.setFilePath(fileRootPath + "mp3");
+        mainBinding.tvInfo.setText(audioPlayer.getMediaInfo());
         new Thread(() -> {
             audioPlayer.play();
         }).start();

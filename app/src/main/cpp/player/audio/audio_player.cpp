@@ -21,7 +21,6 @@ extern "C" {
 #include <audio_player.h>
 
 
-
 int log_ffmpeg_error(int errorCode, int line) {
     char *err_buf = new char;
     av_strerror(errorCode, err_buf, 1024);
@@ -106,13 +105,12 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
     int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
     jclass clazz = env->GetObjectClass(instance);
     //调用Java方法MethodID
-    jmethodID methodId = env->GetMethodID(clazz, "createTrack", "(II)V");
-    jmethodID methodID1 = env->GetMethodID(clazz, "playTrack", "([BI)V");
+    jmethodID createTrackId = env->GetMethodID(clazz, "createTrack", "(II)V");
+    jmethodID playTrackId = env->GetMethodID(clazz, "playTrack", "([BI)V");
     //通过methodId调用Java方法
-    env->CallVoidMethod(instance, methodId, 44100, out_channel_nb);
+    env->CallVoidMethod(instance, createTrackId, 44100, out_channel_nb);
     //存储pcm数据
     uint8_t *out_buf = (uint8_t *) av_malloc(2 * 44100);
-    int frame_count = 0;
     //一帧一帧读取压缩的音频数据AVPacket
     int ret;
     while (av_read_frame(pFormatContext, avp) >= 0) {
@@ -121,16 +119,15 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
             if (ret != 0) {
                 return ret;
             }
-            while (avcodec_receive_frame(pCodecContext, avf) == 0) {
-                LOGD("正在解码第%d帧", ++frame_count);
+            while ((status = avcodec_receive_frame(pCodecContext, avf)) == 0) {
+                //LOGD("正在解码第%d帧", ++frame_count);
                 int len = swr_convert(swr_cxt, &out_buf, 2 * 44100, (const uint8_t **) avf->data,
                                       avf->nb_samples);
                 //get size of sample
                 int out_buf_size = len * out_channel_nb * av_get_bytes_per_sample(out_sample_fmt);
                 jbyteArray audioArray = env->NewByteArray(out_buf_size);
                 env->SetByteArrayRegion(audioArray, 0, out_buf_size, (const jbyte *) out_buf);
-
-                env->CallVoidMethod(instance, methodID1, audioArray, out_buf_size);
+                env->CallVoidMethod(instance, playTrackId, audioArray, out_buf_size);
                 env->DeleteLocalRef(audioArray);
             }
         }
@@ -144,14 +141,15 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
 }
 
 extern "C"
-JNIEXPORT int JNICALL
-Java_com_imorning_mediaplayer_player_audio_AudioPlayer__1play(JNIEnv *env, jobject thiz,
-                                                              jstring path) {
-    return playAudio(env, thiz, path);
+JNIEXPORT jint JNICALL
+Java_com_imorning_mediaplayer_player_audio_AudioPlayer_nativePlay(JNIEnv *env, jobject thiz,
+                                                                  jstring path) {
+    playAudio(env, thiz, path);
+    return 0;
 }
 extern "C"
-JNIEXPORT int JNICALL
-Java_com_imorning_mediaplayer_player_audio_AudioPlayer__1stop(JNIEnv *env, jobject thiz) {
+JNIEXPORT jint JNICALL
+Java_com_imorning_mediaplayer_player_audio_AudioPlayer_nativeStop(JNIEnv *env, jobject thiz) {
 
     return 0;
 }

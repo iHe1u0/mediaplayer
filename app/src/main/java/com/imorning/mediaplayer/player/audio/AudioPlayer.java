@@ -7,7 +7,7 @@ import android.util.Log;
 
 import com.imorning.mediaplayer.player.Player;
 
-import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 public class AudioPlayer extends Player {
 
@@ -25,17 +25,17 @@ public class AudioPlayer extends Player {
             Log.e(TAG, dataSourceFile.getAbsolutePath() + " not found");
             return;
         }
-        _play(getFilePath());
+        nativePlay(getFilePath());
     }
 
     @Override
     public void pause() {
-        _pause();
+        nativePause();
     }
 
     @Override
     public void stop() {
-        _stop();
+        nativeStop();
     }
 
     public void createTrack(int sampleRateInHn, int nbChannel) {
@@ -59,14 +59,14 @@ public class AudioPlayer extends Player {
 
     @Override
     public void seekTo(long time) {
-        _seekTo(time);
+        nativeSeekTo(time);
     }
 
-    private native int _play(String path);
+    private native int nativePlay(String path);
 
-    private native int _pause();
+    private native int nativePause();
 
-    private native int _stop();
+    private native int nativeStop();
 
-    private native int _seekTo(long time);
+    private native int nativeSeekTo(long time);
 }
