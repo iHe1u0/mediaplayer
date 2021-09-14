@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <jni.h>
+#include <string>
+#include <unistd.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -17,11 +20,6 @@ extern "C" {
 
 #include <audio_player.h>
 
-#include <SDL2/SDL.h>
-#include <jni.h>
-#include <string>
-#include <android/native_window_jni.h>
-#include <unistd.h>
 
 
 int log_ffmpeg_error(int errorCode, int line) {
