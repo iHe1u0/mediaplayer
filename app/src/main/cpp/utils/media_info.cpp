@@ -21,10 +21,20 @@ using namespace std;
  * 5. 编解码格式
  */
 
+struct AudioInfo {
+    char *audioPath; //文件路径
+    int audioIndex; //音频索引
+    int sampleRate; //音频采样率
+    long int bitRate; //音频bitRate
+    int channels; //音频通道数
+    const char *codecId; //编解码器
+    char *format; //音频采样格式
+    int frameSize; //音频帧大小
+} audioInfo;
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobject thiz,
+Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobject instance,
                                                                jstring url) {
     string info;
     // 注册所有的封装和解封装格式
@@ -105,14 +115,20 @@ Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobj
             LOGI("视频bit_rete %ld kb/s", avCodecParameters->bit_rate / 1000);
         } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
             audioIndex = i;
-            LOGI("当前是音频数据，索引 = %d", audioIndex);
-            LOGI("音频采样率 = %d", avCodecParameters->sample_rate);
-            LOGI("音频 bit_rate = %ld kb/s", avCodecParameters->bit_rate / 1000);
-            LOGI("音频通道数 = %d", avCodecParameters->channels);
-            LOGI("音频编解码器 = %s", avcodec_get_name(avCodecParameters->codec_id));
-            LOGI("音频采样格式 = %s", av_get_sample_fmt_name((AVSampleFormat) avCodecParameters->format));
-            LOGI("音频音频帧大小 = %d", avCodecParameters->frame_size); //音频音频帧大小 = 1024
 
+
+            info.append("当前是音频数据，索引 = ").append(to_string(audioIndex)).append("\n");
+            info.append("音频采样率 = ").append(to_string(avCodecParameters->sample_rate)).append("\n");
+            info.append("音频 bit_rate = ").append(
+                    to_string(avCodecParameters->bit_rate / 1000)).append("kb/s").append("\n");
+            info.append("音频通道数 = ").append(to_string(avCodecParameters->channels)).append("\n");
+            info.append("音频编解码器 = ").append(avcodec_get_name(avCodecParameters->codec_id))
+                    .append("\n");
+            info.append("音频采样格式 = ").append(
+                            av_get_sample_fmt_name((AVSampleFormat) avCodecParameters->format))
+                    .append("\n");
+            info.append("音频音频帧大小 = ")
+                    .append(to_string(avCodecParameters->frame_size)); //音频音频帧大小 = 1024
         }
     }
 
@@ -128,6 +144,6 @@ Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobj
 
     //关闭 AVFormatContext
     avformat_close_input(&avFormatContext);
-    return NULL;
+    return env->NewStringUTF(info.c_str());
 
 }
