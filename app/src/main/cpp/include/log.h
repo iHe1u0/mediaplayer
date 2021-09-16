@@ -7,6 +7,7 @@
 #ifndef LOG_H
 #define LOG_H
 
+#define DEBUG
 
 #define LOGN (void) 0
 

@@ -7,13 +7,14 @@ import android.util.Log;
 
 import com.imorning.mediaplayer.player.Player;
 
-import java.util.Arrays;
-
 public class AudioPlayer extends Player {
 
     private static final String TAG = "AudioPlayer";
 
     private AudioTrack audioTrack;
+
+    //播放状态
+    private boolean isStop = false;
 
     @Override
     public void play() {
@@ -26,6 +27,7 @@ public class AudioPlayer extends Player {
             return;
         }
         nativePlay(getFilePath());
+        isStop = false;
     }
 
     @Override
@@ -36,23 +38,27 @@ public class AudioPlayer extends Player {
     @Override
     public void stop() {
         nativeStop();
+        isStop = true;
     }
 
-    public void createTrack(int sampleRateInHn, int nbChannel) {
+    public void createTrack(int sampleRateInHz, int nbChannel) {
         int channelConfig;
         if (nbChannel == 2) {
             channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
         } else {
             channelConfig = AudioFormat.CHANNEL_OUT_MONO;
         }
-        int bufferSize = AudioTrack.getMinBufferSize(sampleRateInHn, channelConfig, AudioFormat.ENCODING_PCM_16BIT);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRateInHn, channelConfig, AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize, AudioTrack.MODE_STREAM);
-        audioTrack.play();
+        int minBufferSize = AudioTrack.getMinBufferSize(sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT);
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT,
+                minBufferSize, AudioTrack.MODE_STREAM);
+        if (audioTrack.getPlayState() != AudioTrack.STATE_UNINITIALIZED) {
+            audioTrack.play();
+            Log.d(TAG, "createTrack: sample:" + sampleRateInHz);
+        }
     }
 
     public void playTrack(byte[] buffer, int length) {
-        if (audioTrack != null && audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+        if (null != audioTrack && audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
             audioTrack.write(buffer, 0, length);
         }
     }
@@ -69,4 +75,5 @@ public class AudioPlayer extends Player {
     private native int nativeStop();
 
     private native int nativeSeekTo(long time);
+
 }

@@ -33,25 +33,34 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
     int status = 0;
     const char *path = env->GetStringUTFChars(audioPath, 0);
     av_register_all();
-    AVFormatContext *pFormatContext = avformat_alloc_context();
-    if ((status = avformat_open_input(&pFormatContext, path, NULL, NULL)) != 0) {
+    AVFormatContext *pAvFormatContext = avformat_alloc_context();
+    if ((status = avformat_open_input(&pAvFormatContext, path, NULL, NULL)) != 0) {
         return log_ffmpeg_error(status, code_line);
     }
-    if ((status = avformat_find_stream_info(pFormatContext, NULL)) < 0) {
+    if ((status = avformat_find_stream_info(pAvFormatContext, NULL)) < 0) {
         return log_ffmpeg_error(status, code_line);
     }
-    av_dump_format(pFormatContext, 0, path, 0);
+    av_dump_format(pAvFormatContext, 0, path, 0);
     int audio_index = -1;
-    for (int i = 0; i < pFormatContext->nb_streams; i++) {
-        if (pFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+
+    /** for (int i = 0; i < pAvFormatContext->nb_streams; i++) {
+        if (pAvFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             audio_index = i;
             break;
         }
-    }
+    }*/
+    /**
+     * 查找出最好的音频流
+     *
+     * int av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream,
+     *                          AVCodec **decoder_ret, int flags)
+     */
+    audio_index = av_find_best_stream(pAvFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
     if (audio_index == -1) {
+        LOGE("没找到音频流");
         return -1;
     }
-    AVCodecParameters *pCodecParams = pFormatContext->streams[audio_index]->codecpar;
+    AVCodecParameters *pCodecParams = pAvFormatContext->streams[audio_index]->codecpar;
     AVCodecID pCodecId = pCodecParams->codec_id;
     if (pCodecId == NULL) {
         LOGE("%s", "CodecID == null");
@@ -78,42 +87,51 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
 
     //frame->16bit 44100 PCM 统一音频采样格式与采样率
     SwrContext *swr_cxt = swr_alloc();
-    //重采样设置选项-----------------------------------------------------------start
+
 
     // 输入的采样格式
     enum AVSampleFormat in_sample_fmt = pCodecContext->sample_fmt;
+
     //输出的采样格式
     enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+
     //输入的采样率
     int in_sample_rate = pCodecContext->sample_rate;
     LOGD("sample rate = %d \n", in_sample_rate);
+
     //输出的采样率
     int out_sample_rate = 44100;
+
     //输入的声道布局
     uint64_t in_ch_layout = pCodecContext->channel_layout;
+
     //输出的声道布局
     uint64_t out_ch_layout = AV_CH_LAYOUT_MONO;
+
     //SwrContext 设置参数
     swr_alloc_set_opts(swr_cxt, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout,
                        in_sample_fmt, in_sample_rate, 0, NULL);
+
     //初始化SwrContext
     swr_init(swr_cxt);
 
-    //重采样设置选项-----------------------------------------------------------end
-
     // 获取输出的声道个数
     int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
-    jclass clazz = env->GetObjectClass(instance);
+
     //调用Java方法MethodID
+    jclass clazz = env->GetObjectClass(instance);
     jmethodID createTrackId = env->GetMethodID(clazz, "createTrack", "(II)V");
     jmethodID playTrackId = env->GetMethodID(clazz, "playTrack", "([BI)V");
+
     //通过methodId调用Java方法
     env->CallVoidMethod(instance, createTrackId, 44100, out_channel_nb);
+
     //存储pcm数据
     uint8_t *out_buf = (uint8_t *) av_malloc(2 * 44100);
+
     //一帧一帧读取压缩的音频数据AVPacket
     int ret;
-    while (av_read_frame(pFormatContext, avp) >= 0) {
+    while (av_read_frame(pAvFormatContext, avp) >= 0) {
         if (avp->stream_index == audio_index) {
             ret = avcodec_send_packet(pCodecContext, avp);
             if (ret != 0) {
@@ -136,7 +154,7 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
     av_frame_free(&avf);
     swr_free(&swr_cxt);
     avcodec_close(pCodecContext);
-    avformat_close_input(&pFormatContext);
+    avformat_close_input(&pAvFormatContext);
     env->ReleaseStringUTFChars(audioPath, path);
 }
 

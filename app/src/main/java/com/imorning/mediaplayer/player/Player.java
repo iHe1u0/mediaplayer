@@ -37,7 +37,7 @@ public abstract class Player {
         return dataSourceFile.getAbsolutePath();
     }
 
-    public void setFilePath(String filePath) {
+    public void setDataSource(String filePath) {
         dataSourceFile = new File(filePath);
     }
 
