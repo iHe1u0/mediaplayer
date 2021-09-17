@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <log.h>
 #include <string>
+#include <json/json.h>
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -25,7 +26,8 @@ extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobject instance,
                                                                jstring url) {
-    string jsonBuilder;
+    string jsonBuilder;    // 用来保存媒体信息
+    Json::Value jsonRoot, jsonStreamInfo;
     // 注册所有的封装和解封装格式
     av_register_all();
 
@@ -55,70 +57,67 @@ Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobj
         LOGE("avformat_find_stream_info failed:%s", av_err2str(ret));
         return env->NewStringUTF((new string("avformat_find_stream_info failed"))->c_str());
     }
-    //媒体流数量率
+    //媒体流数量
     int nb_streams = pAvFormatContext->nb_streams;
 
     //时长
-    int64_t duration = pAvFormatContext->duration / AV_TIME_BASE;
+    double duration = pAvFormatContext->duration / AV_TIME_BASE;
 
     //媒体路径
     char *fileAbsPath = pAvFormatContext->url;
 
     //首帧的时间
-    int64_t start_time = pAvFormatContext->start_time / AV_TIME_BASE;
+    double start_time = pAvFormatContext->start_time / AV_TIME_BASE;
 
-    jsonBuilder.append("{\n");
-    jsonBuilder.append("文件路径:").append(fileAbsPath).append(";\n");
-    jsonBuilder.append("解码器:").append(pAvFormatContext->iformat->name).append(";\n");
-    jsonBuilder.append("首帧时间:").append(to_string(start_time)).append(";\n");
-    jsonBuilder.append("媒体流数量:").append(to_string(nb_streams)).append(";\n");
-    jsonBuilder.append("总时长:").append(to_string(duration)).append(";\n");
+    jsonRoot["fileAbsPath"] = fileAbsPath;
+    jsonRoot["解码器:"] = pAvFormatContext->iformat->name;
+    jsonRoot["首帧时间:"] = start_time;
+    jsonRoot["媒体流数量:"] = nb_streams;
+    jsonRoot["总时长:"] = duration;
     //拿到音视频流的相关信息
     int audioIndex = 0;
     int videoIndex = 0;
 
-    jsonBuilder.append("streamInfo:{\n");
-    //=========================方式1：获取音视频索引=========================================
-    for (int i = 0; i < pAvFormatContext->nb_streams; i++) {
-        jsonBuilder.append("streamId:").append(to_string(i)).append(";\n");
-        AVStream *pAvStream = pAvFormatContext->streams[i];
-        //拿到流的编码器参数指针
-        AVCodecParameters *avCodecParameters = pAvStream->codecpar;
 
-        //当前的 AVStream 是视频流
+    //=========================方式1：获取音视频索引=========================================
+    for (int streamIndex = 0; streamIndex < pAvFormatContext->nb_streams; streamIndex++) {
+        jsonStreamInfo["streamId:"] = streamIndex;
+        AVStream *pAvStream = pAvFormatContext->streams[streamIndex];
+        // 流的编码器参数指针
+        AVCodecParameters *avCodecParameters = pAvStream->codecpar;
         if (avCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
-            //avCodecParameters->bit_rate为0，代表着这是一个音频文件
-            if (avCodecParameters->bit_rate == 0) {
-                jsonBuilder.append("isVideo:false;\n");
-                LOGI("%s", "This is not a video file.");
+            jsonStreamInfo["媒体流类型"] = av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
+            if (avCodecParameters->bit_rate != 0) {
+                jsonStreamInfo["视频帧率"] = pAvStream->avg_frame_rate.num;
+                jsonStreamInfo["视频宽度"] = avCodecParameters->width;
+                jsonStreamInfo["视频高度"] = avCodecParameters->height;
+                jsonStreamInfo["视频pixel_format"] = avCodecParameters->format;
+                jsonStreamInfo["视频编解码器"] = avcodec_get_name(avCodecParameters->codec_id);
+                jsonStreamInfo["视频bit_rate"] = avCodecParameters->bit_rate / 1000.0; // Kb/s
             }
-            jsonBuilder.append("媒体类型:").append("视频").append(";\n");
-            //视频对应的 format 就是  AVPixelFormat,codec_id 编码器的 id ，例如 h264,aac
-            LOGI("视频帧率 = %d", pAvStream->avg_frame_rate.num);
-            LOGI("视频宽度 = %d", avCodecParameters->width);
-            LOGI("视频高度 = %d", avCodecParameters->height);
-            LOGI("视频pixel_format = %d", avCodecParameters->format);
-            LOGI("视频编解码器 = %s", avcodec_get_name(avCodecParameters->codec_id));
-            LOGI("视频bit_rate %ld kb/s", avCodecParameters->bit_rate / 1000);
         } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audioIndex = i;
-            jsonBuilder.append("媒体类型:").append("音频").append(";\n");
-            jsonBuilder.append("当前播放索引:").append(to_string(audioIndex)).append(";\n");
-            jsonBuilder.append("音频采样率:").append(to_string(avCodecParameters->sample_rate)).append(
-                    ";\n");
-            jsonBuilder.append("音频 bit_rate:").append(
-                    to_string(avCodecParameters->bit_rate / 1000)).append("kb/s").append(";\n");
-            jsonBuilder.append("音频通道数:").append(to_string(avCodecParameters->channels)).append(
-                    ";\n");
-            jsonBuilder.append("音频编解码器:").append(avcodec_get_name(avCodecParameters->codec_id))
-                    .append(";\n");
-            jsonBuilder.append("音频采样格式:").append(
-                            av_get_sample_fmt_name((AVSampleFormat) avCodecParameters->format))
-                    .append(";\n");
-            jsonBuilder.append("音频音频帧大小:")
-                    .append(to_string(avCodecParameters->frame_size)).append(";\n");
+            audioIndex = streamIndex;
+            jsonStreamInfo["媒体流类型"] = av_get_media_type_string(AVMEDIA_TYPE_AUDIO);
+            jsonStreamInfo["音频采样率"] = avCodecParameters->sample_rate;
+            jsonStreamInfo["音频 bit_rate"] = avCodecParameters->bit_rate / 1000.0;
+            jsonStreamInfo["音频通道数"] = avCodecParameters->channels;
+            jsonStreamInfo["音频编解码器"] = avcodec_get_name(avCodecParameters->codec_id);
+            jsonStreamInfo["音频采样格式"] = av_get_sample_fmt_name(
+                    (AVSampleFormat) avCodecParameters->format);
+            jsonStreamInfo["音频音频帧大小"] = avCodecParameters->frame_size;
+        } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_ATTACHMENT) {
+            jsonStreamInfo["媒体流类型"] = av_get_media_type_string(AVMEDIA_TYPE_ATTACHMENT);
+        } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_DATA) {
+            jsonStreamInfo["媒体流类型"] = "AVMEDIA_TYPE_DATA";
+        } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_NB) {
+            jsonStreamInfo["媒体流类型"] = "AVMEDIA_TYPE_NB";
+        } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            jsonStreamInfo["媒体流类型"] = "AVMEDIA_TYPE_SUBTITLE";
+        } else if (avCodecParameters->codec_type == AVMEDIA_TYPE_UNKNOWN) {
+            jsonStreamInfo["媒体流类型"] = "AVMEDIA_TYPE_UNKNOWN";
         }
-        jsonBuilder.append("}\n");
+        jsonRoot["stream_info"].append(jsonStreamInfo);
+        jsonStreamInfo.clear();
     }
 
     //=========================方式2：获取音视频索引=========================================
@@ -130,10 +129,9 @@ Java_com_imorning_mediaplayer_player_Player_nativeGetMediaInfo(JNIEnv *env, jobj
     //LOGI("最佳视频的索引值 = %d", videoIndex);
 
     env->ReleaseStringUTFChars(url, _url);
-
     //关闭 AVFormatContext
     avformat_close_input(&pAvFormatContext);
-    jsonBuilder.append("}\n");
-    return env->NewStringUTF(jsonBuilder.c_str());
+
+    return env->NewStringUTF(jsonRoot.toStyledString().c_str());
 
 }

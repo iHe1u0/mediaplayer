@@ -42,19 +42,6 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
     }
     av_dump_format(pAvFormatContext, 0, path, 0);
     int audio_index = -1;
-
-    /** for (int i = 0; i < pAvFormatContext->nb_streams; i++) {
-        if (pAvFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audio_index = i;
-            break;
-        }
-    }*/
-    /**
-     * 查找出最好的音频流
-     *
-     * int av_find_best_stream(AVFormatContext *ic, enum AVMediaType type, int wanted_stream_nb, int related_stream,
-     *                          AVCodec **decoder_ret, int flags)
-     */
     audio_index = av_find_best_stream(pAvFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
     if (audio_index == -1) {
         LOGE("没找到音频流");
@@ -135,10 +122,10 @@ int playAudio(JNIEnv *env, jobject instance, jstring audioPath) {
         if (avp->stream_index == audio_index) {
             ret = avcodec_send_packet(pCodecContext, avp);
             if (ret != 0) {
-                return ret;
+                continue;
             }
             while ((status = avcodec_receive_frame(pCodecContext, avf)) == 0) {
-                //LOGD("正在解码第%d帧", ++frame_count);
+                LOGD("decode %ld", avp->dts);
                 int len = swr_convert(swr_cxt, &out_buf, 2 * 44100, (const uint8_t **) avf->data,
                                       avf->nb_samples);
                 //get size of sample

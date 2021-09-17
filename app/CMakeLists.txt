@@ -48,8 +48,17 @@ set_target_properties(hidapi PROPERTIES IMPORTED_LOCATION
 # sdl library end
 
 add_library(Player SHARED
+        # media info utils
         src/main/cpp/utils/media_info.cpp
-        src/main/cpp/player/audio/audio_player.cpp)
+        # audio
+        src/main/cpp/player/audio/audio_player.cpp
+        # video
+        src/main/cpp/player/video/video_play.cpp
+        # for jsoncpp
+        src/main/cpp/utils/jsoncpp/json_reader.cpp
+        src/main/cpp/utils/jsoncpp/json_writer.cpp
+        src/main/cpp/utils/jsoncpp/json_value.cpp
+        )
 target_link_libraries(Player
         log
         OpenSLES

@@ -251,7 +251,7 @@ const char *av_get_media_type_string(enum AVMediaType media_type);
  * Internal time base represented as integer
  */
 
-#define AV_TIME_BASE            1000000
+#define AV_TIME_BASE            1000000.0
 
 /**
  * Internal time base represented as fractional value

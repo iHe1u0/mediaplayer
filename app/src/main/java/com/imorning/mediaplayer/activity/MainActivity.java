@@ -21,7 +21,7 @@ public class MainActivity extends BaseActivity {
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mainBinding.getRoot());
         audioPlayer = new AudioPlayer();
-        audioPlayer.setDataSource(fileRootPath + MP);
+        audioPlayer.setDataSource(fileRootPath + CRASH_MEDIA);
         mainBinding.tvInfo.setText(audioPlayer.getMediaInfo());
         new Thread(new Runnable() {
             @Override
