@@ -43,18 +43,37 @@ android {
 
     defaultConfig {
         applicationId "com.imorning.mediaplayer"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+
     }
 
     buildTypes {
+        debug {
+            multiDexEnabled true
+        }
         release {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile(
+                    'proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+            multiDexEnabled true
         }
     }
+
+    packagingOptions {
+        // Fixes duplicate libraries build issue,
+        // when your project uses more than one plugin that depend on C++ libs.
+        pickFirst 'lib/**/libc++_shared.so'
+    }
+
 }
 
 flutter {
