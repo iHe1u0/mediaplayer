@@ -1,16 +1,11 @@
-# mediaplayer
+# MediaPlayer
 
-A new Flutter project.
+## Description
 
-## Getting Started
+This is a project for play audio and video,it uses ffmpeg library and x264 library.
 
-This project is a starting point for a Flutter application.
+And I'm trying to use [flutter](https://github.com/flutter/flutter) in this project.
 
-A few resources to get you started if this is your first Flutter project:
+## Author
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [iMorning](https://github.com/catcompany)
