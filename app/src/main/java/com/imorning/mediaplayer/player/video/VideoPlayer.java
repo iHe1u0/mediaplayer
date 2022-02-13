@@ -1,26 +1,20 @@
 package com.imorning.mediaplayer.player.video;
 
-import com.imorning.mediaplayer.player.Player;
+import android.content.Context;
+import android.util.AttributeSet;
 
-public class VideoPlayer extends Player {
+import com.shuyu.gsyvideoplayer.video.StandardGSYVideoPlayer;
 
-    @Override
-    public void play() {
-
+public class VideoPlayer extends StandardGSYVideoPlayer {
+    public VideoPlayer(Context context, Boolean fullFlag) {
+        super(context, fullFlag);
     }
 
-    @Override
-    public void pause() {
-
+    public VideoPlayer(Context context) {
+        super(context);
     }
 
-    @Override
-    public void stop() {
-
-    }
-
-    @Override
-    public void seekTo(long time) {
-
+    public VideoPlayer(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
 }
