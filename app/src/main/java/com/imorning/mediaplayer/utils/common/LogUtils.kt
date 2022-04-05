@@ -1,6 +1,5 @@
-package com.imorning.mediaplayer.utils.ui
+package com.imorning.mediaplayer.utils.common
 
-import com.imorning.mediaplayer.utils.ui.LogUtils
 import android.text.TextUtils
 import android.util.Log
 

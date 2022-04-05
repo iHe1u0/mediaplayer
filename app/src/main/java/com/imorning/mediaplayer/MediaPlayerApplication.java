@@ -3,7 +3,7 @@ package com.imorning.mediaplayer;
 import android.app.Application;
 
 import com.danikula.videocache.HttpProxyCacheDebuger;
-import com.imorning.mediaplayer.utils.ui.LogUtils;
+import com.imorning.mediaplayer.utils.common.LogUtils;
 import com.shuyu.gsyvideoplayer.utils.Debuger;
 
 public class MediaPlayerApplication extends Application {

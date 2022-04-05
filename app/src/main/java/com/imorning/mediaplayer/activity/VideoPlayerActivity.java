@@ -2,13 +2,12 @@ package com.imorning.mediaplayer.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 
 import com.imorning.mediaplayer.R;
 import com.imorning.mediaplayer.player.video.VideoPlayer;
-import com.imorning.mediaplayer.utils.ui.LogUtils;
+import com.imorning.mediaplayer.utils.common.LogUtils;
 
 public class VideoPlayerActivity extends BaseActivity {
 

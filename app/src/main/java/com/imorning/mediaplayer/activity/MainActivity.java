@@ -18,7 +18,7 @@ public class MainActivity extends BaseActivity {
     intent.setAction(Intent.ACTION_VIEW);
     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     intent.setDataAndType(Uri.parse("https://media.w3.org/2010/05/sintel/trailer.mp4"), MimeTypes.VIDEO_MP4);
-    startActivity(intent);
+    // startActivity(intent);
   }
 
   @Override
