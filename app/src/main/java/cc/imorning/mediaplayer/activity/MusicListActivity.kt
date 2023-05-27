@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,14 +17,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
-import cc.imorning.mediaplayer.utils.ui.ToastUtils
 import cc.imorning.mediaplayer.viewmodel.MusicListViewModel
+
+private const val TAG = "MusicListActivity"
 
 class MusicListActivity : BaseActivity() {
 
@@ -34,7 +37,7 @@ class MusicListActivity : BaseActivity() {
 
         viewModel = ViewModelProvider(this).get(MusicListViewModel::class.java)
 
-        viewModel.update()
+        viewModel.update(this)
 
         setContent {
             MediaTheme {
@@ -46,16 +49,26 @@ class MusicListActivity : BaseActivity() {
 
                     val items = viewModel.musicItems.collectAsState()
 
-                    LazyColumn {
+                    if (items.value.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "暂无音乐")
+                        }
+                    } else {
 
-                        item {
-                            for (musicItem in items.value) {
-                                MusicListItem(
-                                    name = musicItem.name,
-                                    artists = musicItem.artists,
-                                    onClick = {
-                                        ToastUtils.showMsg(context = context, musicItem.name)
-                                    })
+                        LazyColumn {
+
+                            item {
+                                for (musicItem in items.value) {
+                                    MusicListItem(
+                                        name = musicItem.name,
+                                        artists = musicItem.artists,
+                                        onClick = {
+                                            viewModel.play(context, musicItem)
+                                        })
+                                }
                             }
                         }
                     }
@@ -66,7 +79,7 @@ class MusicListActivity : BaseActivity() {
 }
 
 @Composable
-fun MusicListItem(name: String, artists: String, onClick: () -> Unit) {
+fun MusicListItem(name: String? = "Unknown", artists: String? = "Unknown", onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -77,11 +90,11 @@ fun MusicListItem(name: String, artists: String, onClick: () -> Unit) {
             }
     ) {
         Text(
-            text = name,
+            text = name.orEmpty(),
             fontSize = 24.sp
         )
         Text(
-            text = artists,
+            text = artists.orEmpty(),
             fontSize = 20.sp
         )
         Divider(Modifier.height(2.dp))

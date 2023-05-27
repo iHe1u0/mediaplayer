@@ -1,22 +1,25 @@
 package cc.imorning.mediaplayer.utils.list
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.provider.MediaStore
-import android.support.v4.media.MediaMetadataCompat
+import cc.imorning.mediaplayer.data.MusicItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class MusicList {
-    suspend fun getAllMusic(context: Context): List<MediaMetadataCompat> =
-        withContext(Dispatchers.IO) {
-            val result = mutableListOf<MediaMetadataCompat>()
+object MusicHelper {
 
+    @SuppressLint("Range")
+    suspend fun getAllMusic(context: Context): MutableList<MusicItem> =
+        withContext(Dispatchers.IO) {
+            val result = mutableListOf<MusicItem>()
             // 设定想要获取的列名/字段名称（需要用到MediaStore中定义的常量）
             val projection = arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DATA
                 /*其他所需的属性*/
             )
 
@@ -36,9 +39,17 @@ class MusicList {
                         cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST))
                     val duration =
                         cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION))
-
-                    // TODO：构造一个mediaMetadata对象，将其加入到result列表中
-
+                    val path =
+                        cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA))
+                    result.add(
+                        MusicItem(
+                            id = id,
+                            name = title,
+                            artists = artist,
+                            duration = duration,
+                            path = path
+                        )
+                    )
                 }
 
                 cursor.close()
