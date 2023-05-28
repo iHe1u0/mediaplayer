@@ -13,10 +13,10 @@ class MusicPlayService : Service() {
         const val URL = "url"
     }
 
-    private lateinit var player: MediaPlayer
+    private var player: MediaPlayer? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        initPlayer(intent?.getStringExtra(URL))
+        handleCommand(intent?.getStringExtra(URL))
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -25,17 +25,42 @@ class MusicPlayService : Service() {
     }
 
     override fun onDestroy() {
-        player.release()
+        stop()
         super.onDestroy()
     }
 
-    private fun initPlayer(url: String?) {
+    private fun play(url: String): Unit {
+        if (player?.isPlaying == true) {
+            stop()
+        }
+        player = MediaPlayer()
+        player!!.apply {
+            setDataSource(url)
+            prepare()
+            start()
+        }
+    }
+
+    private fun pause() {
+        if (player?.isPlaying == true) {
+            player?.pause()
+        }
+    }
+
+    private fun stop(): Unit {
+        if (player?.isPlaying == true) {
+            player!!.apply {
+                stop()
+                release()
+            }
+            player = null
+        }
+    }
+
+    private fun handleCommand(url: String?) {
         if (url == null) {
             return
         }
-        player = MediaPlayer()
-        player.setDataSource(url)
-        player.prepare()
-        player.start()
+        play(url)
     }
 }

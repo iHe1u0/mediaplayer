@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
 import cc.imorning.mediaplayer.viewmodel.MusicListViewModel
@@ -89,14 +88,14 @@ fun MusicListItem(name: String? = "Unknown", artists: String? = "Unknown", onCli
                 onClick()
             }
     ) {
+        Divider(Modifier.height(2.dp))
         Text(
             text = name.orEmpty(),
-            fontSize = 24.sp
+            style = MaterialTheme.typography.bodyLarge
         )
         Text(
             text = artists.orEmpty(),
-            fontSize = 20.sp
+            style = MaterialTheme.typography.bodyMedium
         )
-        Divider(Modifier.height(2.dp))
     }
 }
