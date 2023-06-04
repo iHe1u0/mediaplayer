@@ -1,8 +1,8 @@
 package cc.imorning.mediaplayer.activity
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
 import cc.imorning.mediaplayer.data.MusicItem
@@ -35,6 +39,7 @@ import cc.imorning.mediaplayer.service.MusicPlayService
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModel
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModelFactory
 import coil.compose.AsyncImage
+import com.google.common.util.concurrent.MoreExecutors
 
 private const val TAG = "MusicPlayActivity"
 
@@ -53,8 +58,8 @@ class MusicPlayActivity : BaseActivity() {
         )[MusicPlayViewModel::class.java]
 
         val service = Intent(this, MusicPlayService::class.java)
-        service.putExtra(MusicPlayService.URL, musicItem!!.path)
-        startService(service)
+        service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
+        ContextCompat.startForegroundService(this, service)
 
         setContent {
             MediaTheme {
@@ -68,6 +73,16 @@ class MusicPlayActivity : BaseActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
+        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+        controllerFuture.addListener(
+            { controllerFuture.get() },
+            MoreExecutors.directExecutor()
+        )
+    }
+
     companion object {
         const val ITEM: String = "item"
     }
@@ -77,6 +92,13 @@ class MusicPlayActivity : BaseActivity() {
 @Composable
 fun MusicPlayScreen(viewModel: MusicPlayViewModel, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
+        Text(
+            text = "Music",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            textAlign = TextAlign.Center
+        )
         AsyncImage(
             model = "https://p2.music.126.net/ryk8Gu64rOhlYn0pc2Q8Ww==/109951168090271827.jpg",
             contentDescription = "歌曲封面",
@@ -114,7 +136,6 @@ fun ProgressContent(viewModel: MusicPlayViewModel) {
             value = sliderPosition,
             onValueChange = {
                 sliderPosition = it
-                Log.d(TAG, "ProgressContent: $it")
             }
         )
         Text(

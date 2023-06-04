@@ -45,6 +45,9 @@ open class BaseActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
         for (permission in permissions) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -66,6 +69,7 @@ open class BaseActivity : AppCompatActivity() {
         private const val REQUEST_PERMISSION_CODE = 1124
         private val permissions = mutableListOf(
             Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.SYSTEM_ALERT_WINDOW
         )
     }
 }

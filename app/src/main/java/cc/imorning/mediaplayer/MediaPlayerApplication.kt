@@ -1,10 +1,11 @@
-package cc.imorning.mediaplayer;
+package cc.imorning.mediaplayer
 
-import android.app.Application;
+import android.app.Application
+import cc.imorning.mediaplayer.utils.ui.NotificationHelper
 
-public class MediaPlayerApplication extends Application {
-  @Override
-  public void onCreate() {
-    super.onCreate();
-  }
+class MediaPlayerApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        NotificationHelper.getInstance(this).init()
+    }
 }
