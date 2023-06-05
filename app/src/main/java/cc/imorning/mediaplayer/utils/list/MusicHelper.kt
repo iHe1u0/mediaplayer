@@ -26,7 +26,13 @@ object MusicHelper {
             val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
             val cursor =
-                context.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, selection, null, null)
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selection,
+                    null,
+                    null
+                )
 
             if (cursor != null) {
 

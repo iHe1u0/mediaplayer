@@ -1,8 +1,11 @@
 package cc.imorning.mediaplayer.activity
 
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,10 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import cc.imorning.mediaplayer.IMusicPlayerService
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
 import cc.imorning.mediaplayer.data.MusicItem
@@ -48,6 +51,19 @@ class MusicPlayActivity : BaseActivity() {
     private lateinit var viewModel: MusicPlayViewModel
     private var musicItem: MusicItem? = null
 
+    private lateinit var musicPlayService: IMusicPlayerService
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            musicPlayService = IMusicPlayerService.Stub.asInterface(service)
+
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+
+        }
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -59,8 +75,10 @@ class MusicPlayActivity : BaseActivity() {
 
         val service = Intent(this, MusicPlayService::class.java)
         service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
-        ContextCompat.startForegroundService(this, service)
+        // ContextCompat.startForegroundService(this, service)
+        bindService(service, serviceConnection, Context.BIND_AUTO_CREATE)
 
+        viewModel.init(serviceConnection)
         setContent {
             MediaTheme {
                 Surface(

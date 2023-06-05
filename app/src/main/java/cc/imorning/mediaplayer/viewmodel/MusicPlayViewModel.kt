@@ -1,5 +1,6 @@
 package cc.imorning.mediaplayer.viewmodel
 
+import android.content.ServiceConnection
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -10,6 +11,10 @@ private const val TAG = "MusicPlayViewModel"
 class MusicPlayViewModel(
     private val musicItem: MusicItem
 ) : ViewModel() {
+
+    fun init(serviceConnection: ServiceConnection) {
+
+    }
 
     init {
         Log.i(TAG, "init: $musicItem")

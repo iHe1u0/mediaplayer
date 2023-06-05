@@ -159,7 +159,7 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
         play(musicItem.path)
     }
 
-    private inner class LocalMusicBinder : Binder(), IMusicPlayerService {
+    private inner class LocalMusicBinder : IMusicPlayerService.Stub() {
         fun getMusicService(): MusicPlayService {
             return this@MusicPlayService
         }
@@ -168,12 +168,14 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
             return this
         }
 
+        @Synchronized
         override fun seekTo(position: Long) {
             if (position >= 0) {
                 player.seekTo(position)
             }
         }
 
+        @Synchronized
         override fun getPosition(): Long {
             if (player.isPlaying) {
                 return player.currentPosition
