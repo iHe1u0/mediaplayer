@@ -63,6 +63,14 @@ object MusicHelper {
             return@withContext result
         }
 
+    /**
+     * query music item by musicId
+     *
+     * @param context Context for query music info
+     * @param musicId A string, which means music id
+     *
+     * @return A MusicItem or null if not found or musicId is incorrect
+     */
     fun getMusicItem(context: Context, musicId: String): MusicItem? {
         if (musicId.toInt() < 0) {
             return null
@@ -115,4 +123,6 @@ object MusicHelper {
         }
         return null
     }
+
+
 }

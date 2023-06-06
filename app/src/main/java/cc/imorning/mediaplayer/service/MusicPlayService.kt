@@ -1,18 +1,14 @@
 package cc.imorning.mediaplayer.service
 
 import android.content.Intent
-import android.media.session.PlaybackState
-import android.os.Bundle
 import android.os.IBinder
-import android.support.v4.media.MediaBrowserCompat
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.media.MediaBrowserServiceCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.common.util.RepeatModeUtil
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
 import cc.imorning.mediaplayer.IMusicPlayerService
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.list.MusicHelper
@@ -25,7 +21,7 @@ private const val TAG = "MusicPlayService"
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
-class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
+class MusicPlayService : MediaSessionService(), MediaSession.Callback {
 
     companion object {
         const val MUSIC_ID = "url"
@@ -62,7 +58,7 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
         player = ExoPlayer.Builder(this).build()
         // Create a MediaSessionCompat
         mediaSession =
-                MediaSession.Builder(this, player).setCallback(LocalMusicSessionCallback()).build()
+            MediaSession.Builder(this, player).setCallback(LocalMusicSessionCallback()).build()
         notificationHelper = NotificationHelper.getInstance(this)
     }
 
@@ -72,6 +68,7 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         handleCommand(intent?.getStringExtra(MUSIC_ID))
+        // val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -79,45 +76,17 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
         return localMusicBinder
     }
 
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        mediaSession
+
     override fun onAddMediaItems(
-            mediaSession: MediaSession,
-            controller: MediaSession.ControllerInfo,
-            mediaItems: MutableList<MediaItem>
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: MutableList<MediaItem>
     ): ListenableFuture<MutableList<MediaItem>> {
         val updatedMediaItems =
-                mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
+            mediaItems.map { it.buildUpon().setUri(it.mediaId).build() }.toMutableList()
         return Futures.immediateFuture(updatedMediaItems)
-    }
-
-    override fun onGetRoot(
-            clientPackageName: String,
-            clientUid: Int,
-            rootHints: Bundle?
-    ): BrowserRoot {
-        // (Optional) Control the level of access for the specified package name.
-        // You'll need to write your own logic to do this.
-        return BrowserRoot(MY_MEDIA_ROOT_ID, null)
-    }
-
-    override fun onLoadChildren(
-            parentMediaId: String,
-            result: Result<MutableList<MediaBrowserCompat.MediaItem>>
-    ) {
-        //  Browsing not allowed
-        if (MY_EMPTY_MEDIA_ROOT_ID == parentMediaId) {
-            result.sendResult(null)
-            return
-        }
-
-        // Check if this is the root menu:
-        if (MY_MEDIA_ROOT_ID == parentMediaId) {
-            // Build the MediaItem objects for the top level,
-            // and put them in the mediaItems list...
-        } else {
-            // Examine the passed parentMediaId to see which submenu we're at,
-            // and put the children of that menu in the mediaItems list...
-        }
-        // result.sendResult(mediaItems)
     }
 
     @OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -137,21 +106,21 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
         // TODO: remove here
         player.repeatMode = Player.REPEAT_MODE_ALL
         val notification = notificationHelper.buildMusicPlayingNotification(
-                musicName = musicItem.name,
-                artist = musicItem.artists,
-                mediaSession = mediaSession
+            musicName = musicItem.name,
+            artist = musicItem.artists,
+            mediaSession = mediaSession
         )
         startForeground(NOTIFICATION_ID, notification.build())
 
         player.addListener(object : Player.Listener {
             override fun onPositionDiscontinuity(
-                    oldPosition: Player.PositionInfo,
-                    newPosition: Player.PositionInfo,
-                    reason: Int
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
             ) {
                 Log.i(
-                        TAG,
-                        "onPositionDiscontinuity: ${oldPosition.positionMs} ${newPosition.positionMs} $reason"
+                    TAG,
+                    "onPositionDiscontinuity: ${oldPosition.positionMs} ${newPosition.positionMs} $reason"
                 )
                 super.onPositionDiscontinuity(oldPosition, newPosition, reason)
             }
@@ -215,9 +184,11 @@ class MusicPlayService : MediaBrowserServiceCompat(), MediaSession.Callback {
 
     override fun onDestroy() {
         stop()
-        player.release()
-        mediaSession?.release()
-        mediaSession = null
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
         stopSelf()
         super.onDestroy()
     }

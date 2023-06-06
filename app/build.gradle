@@ -63,9 +63,8 @@ android {
 
 dependencies {
     implementation 'com.google.accompanist:accompanist-systemuicontroller:0.31.2-alpha'
-
+    implementation "com.google.code.gson:gson:2.10.1"
     implementation "io.coil-kt:coil-compose:2.4.0"
-
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation "androidx.media:media:1.6.0"
     implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.0')
@@ -87,8 +86,6 @@ dependencies {
     implementation "androidx.media3:media3-datasource-cronet:$media3_version"
     // For loading data using the OkHttp network stack
     implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
-    // For loading data using librtmp
-    implementation "androidx.media3:media3-datasource-rtmp:$media3_version"
 
     // For building media playback UIs
     implementation "androidx.media3:media3-ui:$media3_version"
