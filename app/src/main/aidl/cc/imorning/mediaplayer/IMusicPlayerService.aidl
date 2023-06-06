@@ -11,4 +11,11 @@ interface IMusicPlayerService {
 
     long getPosition();
 
+    int getRepeatMode();
+
+    void setRepeatMode(int mode);
+
+    int getPlayState();
+
+    void setPlayState(int state);
 }

@@ -1,11 +1,12 @@
 package cc.imorning.mediaplayer.viewmodel
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.Player
 import cc.imorning.mediaplayer.IMusicPlayerService
+import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.TimeUtils
 import cc.imorning.mediaplayer.utils.list.MusicHelper
@@ -35,6 +36,9 @@ class MusicPlayViewModel : ViewModel() {
 
     private val _currentSeconds = MutableStateFlow("00:00")
     val currentSeconds = _currentSeconds.asStateFlow()
+
+    private val _repeatModeIcon = MutableStateFlow(R.mipmap.ic_loop_all)
+    val repeatModeIcon = _repeatModeIcon.asStateFlow()
 
     fun init(context: Context, musicPlayService: IMusicPlayerService?) {
         if (musicPlayService == null) {
@@ -70,8 +74,31 @@ class MusicPlayViewModel : ViewModel() {
         }
     }
 
-    init {
-        Log.i(TAG, "init: $musicItem")
+    fun updateRepeatMode() {
+        var playerRepeatMode = _musicPlayService.repeatMode
+        if (playerRepeatMode == Player.REPEAT_MODE_ALL) {
+            playerRepeatMode = -1
+        }
+        _musicPlayService.repeatMode = ++playerRepeatMode
+        viewModelScope.launch(Dispatchers.Main) {
+            when (playerRepeatMode) {
+                Player.REPEAT_MODE_ALL -> {
+                    _repeatModeIcon.emit(R.mipmap.ic_loop_all)
+                }
+
+                Player.REPEAT_MODE_OFF -> {
+                    _repeatModeIcon.emit(R.mipmap.ic_no_loop)
+                }
+
+                Player.REPEAT_MODE_ONE -> {
+                    _repeatModeIcon.emit(R.mipmap.ic_loop_one)
+                }
+            }
+        }
+    }
+
+    fun updatePlayState() {
+        _musicPlayService.playState = 0
     }
 }
 

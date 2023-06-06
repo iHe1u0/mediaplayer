@@ -1,14 +1,19 @@
 package cc.imorning.mediaplayer.service
 
 import android.content.Intent
+import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import cc.imorning.mediaplayer.IMusicPlayerService
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.list.MusicHelper
@@ -21,7 +26,7 @@ private const val TAG = "MusicPlayService"
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
-class MusicPlayService : MediaSessionService(), MediaSession.Callback {
+class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
 
     companion object {
         const val MUSIC_ID = "url"
@@ -39,7 +44,7 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
      * this music item will save information of current music
      */
     private lateinit var musicItem: MusicItem
-    private var mediaSession: MediaSession? = null
+    private var mediaSession: MediaLibrarySession? = null
 
     /**
      * music list
@@ -55,14 +60,35 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
     override fun onCreate() {
         super.onCreate()
         // Create media player
-        player = ExoPlayer.Builder(this).build()
+        player = ExoPlayer.Builder(this)
+            .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
+            .build()
         // Create a MediaSessionCompat
-        mediaSession =
-            MediaSession.Builder(this, player).setCallback(LocalMusicSessionCallback()).build()
+        mediaSession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
+            .build()
         notificationHelper = NotificationHelper.getInstance(this)
     }
 
-    private inner class LocalMusicSessionCallback : MediaSession.Callback
+    private inner class LocalMusicSessionCallback : MediaLibrarySession.Callback {
+
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            val connectionResult = super.onConnect(session, controller)
+            val sessionCommands =
+                connectionResult.availableSessionCommands
+                    .buildUpon()
+                    // Add custom commands
+                    // .add(SessionCommand(REWIND_30, Bundle()))
+                    // .add(SessionCommand(FAST_FWD_30, Bundle()))
+                    .build()
+            return MediaSession.ConnectionResult.accept(
+                sessionCommands, connectionResult.availablePlayerCommands
+            )
+        }
+
+    }
 
     private val localMusicBinder = LocalMusicBinder()
 
@@ -73,10 +99,11 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
     }
 
     override fun onBind(intent: Intent?): IBinder {
+        super.onBind(intent)
         return localMusicBinder
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
         mediaSession
 
     override fun onAddMediaItems(
@@ -113,18 +140,9 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         startForeground(NOTIFICATION_ID, notification.build())
 
         player.addListener(object : Player.Listener {
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                Log.i(
-                    TAG,
-                    "onPositionDiscontinuity: ${oldPosition.positionMs} ${newPosition.positionMs} $reason"
-                )
-                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
-            }
+
         })
+
     }
 
     private fun pause() {
@@ -180,6 +198,31 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         override fun isPlaying(): Boolean {
             return player.playbackState != Player.STATE_ENDED
         }
+
+        override fun getRepeatMode(): Int {
+            return player.repeatMode
+        }
+
+        override fun setRepeatMode(mode: Int) {
+            if (mode >= 0 && mode <= Player.REPEAT_MODE_ALL) {
+                player.repeatMode = mode
+            }
+        }
+
+        override fun getPlayState(): Int {
+            if (player.isPlaying) {
+                return PlayerState.PLAYING.ordinal
+            }
+            return PlayerState.PAUSE.ordinal
+        }
+
+        override fun setPlayState(state: Int) {
+            if (player.isPlaying) {
+                player.pause()
+            } else {
+                player.play()
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -191,5 +234,9 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         }
         stopSelf()
         super.onDestroy()
+    }
+
+    enum class PlayerState {
+        STOP, PLAYING, PAUSE, NULL
     }
 }

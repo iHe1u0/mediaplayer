@@ -68,7 +68,8 @@ class MusicPlayActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         musicItem = intent.getParcelableExtra(ITEM)
-        viewModel = ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
+        viewModel =
+            ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
 
         val service = Intent(this, MusicPlayService::class.java)
         service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
@@ -78,8 +79,8 @@ class MusicPlayActivity : BaseActivity() {
         setContent {
             MediaTheme {
                 Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     MusicPlayScreen(viewModel)
                 }
@@ -92,8 +93,8 @@ class MusicPlayActivity : BaseActivity() {
         val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
         val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
         controllerFuture.addListener(
-                { controllerFuture.get() },
-                MoreExecutors.directExecutor()
+            { controllerFuture.get() },
+            MoreExecutors.directExecutor()
         )
     }
 
@@ -115,25 +116,25 @@ fun MusicPlayScreen(viewModel: MusicPlayViewModel, modifier: Modifier = Modifier
 
     Column(modifier = modifier) {
         Text(
-                text = musicInfo.value.name.orEmpty(),
-                modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                textAlign = TextAlign.Center
+            text = musicInfo.value.name.orEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            textAlign = TextAlign.Center
         )
         Text(
-                text = musicInfo.value.artists.orEmpty(),
-                modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                textAlign = TextAlign.Center
+            text = musicInfo.value.artists.orEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            textAlign = TextAlign.Center
         )
         AsyncImage(
-                model = "https://p2.music.126.net/ryk8Gu64rOhlYn0pc2Q8Ww==/109951168090271827.jpg",
-                contentDescription = "歌曲封面",
-                modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(weight = 0.5f, fill = true),
+            model = "https://p2.music.126.net/ryk8Gu64rOhlYn0pc2Q8Ww==/109951168090271827.jpg",
+            contentDescription = "歌曲封面",
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(weight = 0.5f, fill = true),
         )
         ProgressContent(viewModel)
         PlayerControlView(viewModel)
@@ -150,31 +151,31 @@ fun ProgressContent(viewModel: MusicPlayViewModel) {
     val currentTime = viewModel.currentSeconds.collectAsState()
 
     Row(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = 12.dp)
     ) {
         Text(
-                text = currentTime.value,
-                modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(horizontal = 8.dp)
+            text = currentTime.value,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(horizontal = 8.dp)
         )
         Slider(
-                modifier = Modifier
-                        .height(8.dp)
-                        .align(Alignment.CenterVertically)
-                        .weight(1f),
-                value = position.value,
-                onValueChange = {
-                    viewModel.updateTime(it)
-                }
+            modifier = Modifier
+                .height(8.dp)
+                .align(Alignment.CenterVertically)
+                .weight(1f),
+            value = position.value,
+            onValueChange = {
+                viewModel.updateTime(it)
+            }
         )
         Text(
-                text = maxTime.value,
-                modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(horizontal = 8.dp)
+            text = maxTime.value,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(horizontal = 8.dp)
         )
     }
 
@@ -182,44 +183,51 @@ fun ProgressContent(viewModel: MusicPlayViewModel) {
 
 @Composable
 fun PlayerControlView(viewModel: MusicPlayViewModel) {
+
+    val repeatIcon = viewModel.repeatModeIcon.collectAsState()
+
     Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 12.dp)
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = 12.dp)
     ) {
         Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { /* 执行第一个IconButton的操作 */ }) {
+            IconButton(onClick = {
+                viewModel.updateRepeatMode()
+            }) {
                 Icon(
-                        painter = painterResource(id = R.mipmap.ic_loop_one),
-                        contentDescription = "循环播放"
+                    painter = painterResource(id = repeatIcon.value),
+                    contentDescription = "循环播放"
                 )
             }
             IconButton(onClick = { /* 执行第一个IconButton的操作 */ }) {
                 Icon(
-                        painter = painterResource(id = R.mipmap.ic_left),
-                        contentDescription = "上一首"
+                    painter = painterResource(id = R.mipmap.ic_left),
+                    contentDescription = "上一首"
                 )
             }
-            IconButton(onClick = { /* 执行第二个IconButton的操作 */ }) {
+            IconButton(onClick = {
+                viewModel.updatePlayState()
+            }) {
                 Icon(
-                        painter = painterResource(id = R.mipmap.ic_play),
-                        contentDescription = "播放"
-                )
-            }
-            IconButton(onClick = { /* 执行第三个IconButton的操作 */ }) {
-                Icon(
-                        painter = painterResource(id = R.mipmap.ic_right),
-                        contentDescription = "下一首"
+                    painter = painterResource(id = R.mipmap.ic_play),
+                    contentDescription = "播放"
                 )
             }
             IconButton(onClick = { /* 执行第三个IconButton的操作 */ }) {
                 Icon(
-                        painter = painterResource(id = R.mipmap.ic_playlist),
-                        contentDescription = "播放列表"
+                    painter = painterResource(id = R.mipmap.ic_right),
+                    contentDescription = "下一首"
+                )
+            }
+            IconButton(onClick = { /* 执行第三个IconButton的操作 */ }) {
+                Icon(
+                    painter = painterResource(id = R.mipmap.ic_playlist),
+                    contentDescription = "播放列表"
                 )
             }
         }
