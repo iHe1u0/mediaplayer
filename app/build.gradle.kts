@@ -43,13 +43,18 @@ android {
     }
 
     buildTypes {
-        val release by getting {
-            isMinifyEnabled = true
-            isShrinkResources = true
+        getByName("release") {
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("config")
+        }
+        getByName("debug") {
+            isDebuggable = true
+            signingConfig = signingConfigs.getByName("config")
         }
     }
 
