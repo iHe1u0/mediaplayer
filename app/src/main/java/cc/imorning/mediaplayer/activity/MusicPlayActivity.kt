@@ -32,12 +32,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.R
+import cc.imorning.mediaplayer.activity.ui.component.LyricsUI
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.service.MusicPlayService
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModel
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModelFactory
-import coil.compose.AsyncImage
 
 private const val TAG = "MusicPlayActivity"
 
@@ -92,7 +92,10 @@ class MusicPlayActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        unbindService(serviceConnection)
+        if (isBound) {
+            unbindService(serviceConnection)
+            isBound = false
+        }
         super.onDestroy()
     }
 
@@ -106,6 +109,9 @@ class MusicPlayActivity : BaseActivity() {
 fun MusicPlayScreen(viewModel: MusicPlayViewModel, modifier: Modifier = Modifier) {
 
     val musicInfo = viewModel.musicItem.collectAsState()
+
+    val currentPosition = viewModel.currentPosition.collectAsState()
+    val lyric = viewModel.lyric.collectAsState()
 
     Column(modifier = modifier) {
         Text(
@@ -122,13 +128,18 @@ fun MusicPlayScreen(viewModel: MusicPlayViewModel, modifier: Modifier = Modifier
                 .padding(top = 4.dp),
             textAlign = TextAlign.Center
         )
-        AsyncImage(
-            model = "https://p2.music.126.net/ryk8Gu64rOhlYn0pc2Q8Ww==/109951168090271827.jpg",
-            contentDescription = "歌曲封面",
-            modifier = Modifier
+        Box(
+            Modifier
                 .fillMaxWidth()
-                .weight(weight = 0.5f, fill = true),
-        )
+                .weight(weight = 0.5f, fill = true)
+                .align(Alignment.CenterHorizontally)
+        ) {
+            // AsyncImage(
+            //     model = "https://p2.music.126.net/ryk8Gu64rOhlYn0pc2Q8Ww==/109951168090271827.jpg",
+            //     contentDescription = "歌曲封面",
+            // )
+            LyricsUI(liveTime = currentPosition.value.toLong(), lyricsEntryList = lyric.value)
+        }
         ProgressContent(viewModel)
         PlayerControlView(viewModel)
     }

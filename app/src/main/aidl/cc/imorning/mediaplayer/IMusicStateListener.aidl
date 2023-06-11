@@ -5,4 +5,6 @@ interface IMusicStateListener {
 
     void onPlayingStateChanged(boolean isPlaying);
 
+    void onMusicItemChanged(String name);
+
 }

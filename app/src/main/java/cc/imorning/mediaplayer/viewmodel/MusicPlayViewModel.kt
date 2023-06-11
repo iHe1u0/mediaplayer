@@ -1,10 +1,12 @@
 package cc.imorning.mediaplayer.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
+import cc.imorning.media.network.music.MusicInfoHelper
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.R
@@ -34,6 +36,9 @@ class MusicPlayViewModel : ViewModel() {
     private val _currentProgress = MutableStateFlow(0f)
     val currentProgress = _currentProgress.asStateFlow()
 
+    private val _currentPos = MutableStateFlow(0f)
+    val currentPosition = _currentPos.asStateFlow()
+
     private val _maxSeconds = MutableStateFlow("00:00")
     val maxSecond = _maxSeconds.asStateFlow()
 
@@ -45,6 +50,9 @@ class MusicPlayViewModel : ViewModel() {
 
     private val _playStateIcon = MutableStateFlow(R.mipmap.ic_play)
     val playStateIcon = _playStateIcon.asStateFlow()
+
+    private val _lyric = MutableStateFlow("")
+    val lyric = _lyric.asStateFlow()
 
     /**
      * music player state listener
@@ -63,6 +71,10 @@ class MusicPlayViewModel : ViewModel() {
             }
         }
 
+        override fun onMusicItemChanged(name: String?) {
+            initLyric(name)
+        }
+
     }
 
     fun init(context: Context, manager: IMusicPlayerManager?) {
@@ -73,15 +85,15 @@ class MusicPlayViewModel : ViewModel() {
         _musicId = _playerManager.musicId
         viewModelScope.launch(Dispatchers.IO) {
             val item = MusicHelper.getMusicItem(context, musicId = _musicId)
-            var currentPos = 0L
             _musicItem.emit(item!!)
             _maxSeconds.emit(TimeUtils.getFormattedTime(_musicItem.value.duration))
-
+            initLyric(item.name)
+        }
+        viewModelScope.launch(Dispatchers.Main) {
             withContext(Dispatchers.Main) {
                 while (true) {
                     if (needUpdateUI) {
-                        currentPos = _playerManager.position
-                        updateUI(currentPos)
+                        updateProgress()
                     }
                     delay(1000)
                 }
@@ -90,10 +102,20 @@ class MusicPlayViewModel : ViewModel() {
         _playerManager.addPlayerStateChangedListener(playerStateListener)
     }
 
-    private suspend fun updateUI(position: Long) {
+    private fun initLyric(name: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val lyricApiId = MusicInfoHelper.getIdValue(name.orEmpty())
+            val lyricData = MusicInfoHelper.getLyricValue(lyricApiId)
+            _lyric.emit(lyricData.orEmpty())
+        }
+    }
+
+    private suspend fun updateProgress() {
         val maxTime = _musicItem.value.duration
+        _currentPos.emit(_playerManager.position.toFloat())
+        val position = _currentPos.value
         _currentProgress.emit(position.toFloat() / maxTime)
-        _currentSeconds.emit(TimeUtils.getFormattedTime(position))
+        _currentSeconds.emit(TimeUtils.getFormattedTime(position.toLong()))
     }
 
     fun updateTime(newTime: Float) {

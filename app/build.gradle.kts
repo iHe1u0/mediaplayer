@@ -87,8 +87,8 @@ android {
 }
 
 dependencies {
+    implementation(project(mapOf("path" to ":network")))
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.31.3-beta")
-    implementation("com.google.code.gson:gson:2.10.1")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.media:media:1.6.0")

@@ -1,4 +1,5 @@
-package cc.imorning.mediaplayer.data
+package cc.imorning.media.network.music
+
 import com.google.gson.annotations.SerializedName
 
 
@@ -6,7 +7,9 @@ data class NeteaseMusicInfoApi(
     @SerializedName("code")
     val code: Int = 0, // 200
     @SerializedName("result")
-    val result: Result = Result()
+    val result: Result = Result(),
+    @SerializedName("message")
+    val message: String? = ""
 )
 
 data class Result(
@@ -272,4 +275,50 @@ data class Artist(
     val picUrl: String = "", // http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg
     @SerializedName("trans")
     val trans: String = ""
+)
+
+
+data class LyricApi(
+    val code: Int = 0,
+    val klyric: Klyric = Klyric(),
+    val lrc: Lrc = Lrc(),
+    val lyricUser: LyricUser = LyricUser(),
+    val qfy: Boolean = false,
+    val sfy: Boolean = false,
+    val sgc: Boolean = false,
+    val tlyric: Tlyric = Tlyric(),
+    val transUser: TransUser = TransUser()
+)
+
+data class Klyric(
+    val lyric: String = "",
+    val version: Int = 0
+)
+
+data class Lrc(
+    val lyric: String = "",
+    val version: Int = 0
+)
+
+data class LyricUser(
+    val demand: Int = 0,
+    val id: Int = 0,
+    val nickname: String = "",
+    val status: Int = 0,
+    val uptime: Long = 0,
+    val userid: Int = 0
+)
+
+data class Tlyric(
+    val lyric: String = "",
+    val version: Int = 0
+)
+
+data class TransUser(
+    val demand: Int = 0,
+    val id: Int = 0,
+    val nickname: String = "",
+    val status: Int = 0,
+    val uptime: Long = 0,
+    val userid: Int = 0
 )

@@ -172,6 +172,9 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         this.musicId = musicId
         musicItem = MusicHelper.getMusicItem(this, musicId)!!
         play(musicItem.path)
+        for (listener in musicStateListenerList){
+            listener.onMusicItemChanged(musicItem.name)
+        }
     }
 
     private inner class LocalMusicBinder : IMusicPlayerManager.Stub() {
@@ -243,6 +246,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
                 musicStateListenerList.remove(listener)
             }
         }
+
     }
 
     override fun onDestroy() {
