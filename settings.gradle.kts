@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "媒体播放器"
-include ':app'
-include ':music'
+include(":app")
+

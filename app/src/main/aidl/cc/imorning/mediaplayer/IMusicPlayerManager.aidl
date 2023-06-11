@@ -1,7 +1,9 @@
-// IMusicPlayerService.aidl
+// IMusicPlayerManager.aidl
 package cc.imorning.mediaplayer;
 
-interface IMusicPlayerService {
+import cc.imorning.mediaplayer.IMusicStateListener;
+
+interface IMusicPlayerManager {
 
     String getMusicId();
 
@@ -18,4 +20,8 @@ interface IMusicPlayerService {
     int getPlayState();
 
     void setPlayState(int state);
+
+    void addPlayerStateChangedListener(IMusicStateListener listener);
+
+    void removePlayerStateChangedListener(IMusicStateListener listener);
 }

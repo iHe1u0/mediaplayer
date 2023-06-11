@@ -5,7 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
-import cc.imorning.mediaplayer.IMusicPlayerService
+import cc.imorning.mediaplayer.IMusicPlayerManager
+import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.TimeUtils
@@ -23,7 +24,9 @@ class MusicPlayViewModel : ViewModel() {
 
     private lateinit var _musicId: String
 
-    private lateinit var _musicPlayService: IMusicPlayerService
+    private lateinit var _playerManager: IMusicPlayerManager
+
+    private var needUpdateUI = false
 
     private val _musicItem = MutableStateFlow(MusicItem())
     val musicItem = _musicItem.asStateFlow()
@@ -40,25 +43,51 @@ class MusicPlayViewModel : ViewModel() {
     private val _repeatModeIcon = MutableStateFlow(R.mipmap.ic_loop_all)
     val repeatModeIcon = _repeatModeIcon.asStateFlow()
 
-    fun init(context: Context, musicPlayService: IMusicPlayerService?) {
-        if (musicPlayService == null) {
+    private val _playStateIcon = MutableStateFlow(R.mipmap.ic_play)
+    val playStateIcon = _playStateIcon.asStateFlow()
+
+    /**
+     * music player state listener
+     */
+    private val playerStateListener: IMusicStateListener = object : IMusicStateListener.Stub() {
+
+        override fun onPlayingStateChanged(isPlaying: Boolean) {
+            viewModelScope.launch {
+                if (isPlaying) {
+                    _playStateIcon.emit(R.mipmap.ic_pause)
+                    needUpdateUI = true
+                } else {
+                    _playStateIcon.emit(R.mipmap.ic_play)
+                    needUpdateUI = false
+                }
+            }
+        }
+
+    }
+
+    fun init(context: Context, manager: IMusicPlayerManager?) {
+        if (manager == null) {
             return
         }
-        _musicPlayService = musicPlayService
-        _musicId = _musicPlayService.musicId
+        _playerManager = manager
+        _musicId = _playerManager.musicId
         viewModelScope.launch(Dispatchers.IO) {
             val item = MusicHelper.getMusicItem(context, musicId = _musicId)
+            var currentPos = 0L
             _musicItem.emit(item!!)
             _maxSeconds.emit(TimeUtils.getFormattedTime(_musicItem.value.duration))
+
             withContext(Dispatchers.Main) {
                 while (true) {
-                    if (_musicPlayService.isPlaying) {
-                        updateUI(_musicPlayService.position)
+                    if (needUpdateUI) {
+                        currentPos = _playerManager.position
+                        updateUI(currentPos)
                     }
                     delay(1000)
                 }
             }
         }
+        _playerManager.addPlayerStateChangedListener(playerStateListener)
     }
 
     private suspend fun updateUI(position: Long) {
@@ -70,16 +99,16 @@ class MusicPlayViewModel : ViewModel() {
     fun updateTime(newTime: Float) {
         viewModelScope.launch(Dispatchers.Main) {
             _currentProgress.emit(newTime)
-            _musicPlayService.seekTo((newTime * _musicItem.value.duration).toLong())
+            _playerManager.seekTo((newTime * _musicItem.value.duration).toLong())
         }
     }
 
     fun updateRepeatMode() {
-        var playerRepeatMode = _musicPlayService.repeatMode
+        var playerRepeatMode = _playerManager.repeatMode
         if (playerRepeatMode == Player.REPEAT_MODE_ALL) {
             playerRepeatMode = -1
         }
-        _musicPlayService.repeatMode = ++playerRepeatMode
+        _playerManager.repeatMode = ++playerRepeatMode
         viewModelScope.launch(Dispatchers.Main) {
             when (playerRepeatMode) {
                 Player.REPEAT_MODE_ALL -> {
@@ -98,7 +127,7 @@ class MusicPlayViewModel : ViewModel() {
     }
 
     fun updatePlayState() {
-        _musicPlayService.playState = 0
+        _playerManager.playState = 0
     }
 }
 

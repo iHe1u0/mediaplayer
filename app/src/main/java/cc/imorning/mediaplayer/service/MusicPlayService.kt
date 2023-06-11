@@ -1,7 +1,6 @@
 package cc.imorning.mediaplayer.service
 
 import android.content.Intent
-import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import androidx.annotation.OptIn
@@ -11,15 +10,14 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
-import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionResult
-import cc.imorning.mediaplayer.IMusicPlayerService
+import cc.imorning.mediaplayer.IMusicPlayerManager
+import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.list.MusicHelper
 import cc.imorning.mediaplayer.utils.ui.NotificationHelper
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.CopyOnWriteArrayList
 
 private const val TAG = "MusicPlayService"
 
@@ -56,6 +54,9 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
      */
     private var isPlaying = false
 
+    private val musicStateListenerList: CopyOnWriteArrayList<IMusicStateListener> =
+        CopyOnWriteArrayList()
+
     @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
@@ -63,6 +64,20 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
             .build()
+        player.addListener(object : Player.Listener {
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                for (listener in musicStateListenerList){
+                    listener.onPlayingStateChanged(isPlaying)
+                }
+                super.onIsPlayingChanged(isPlaying)
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+            }
+        })
+
         // Create a MediaSessionCompat
         mediaSession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
             .build()
@@ -123,8 +138,6 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         }
         mediaItems = mutableListOf(MediaItem.fromUri(url))
         if (player.isPlaying) {
-            // stop()
-            // player.clearMediaItems()
             mediaItems.add(MediaItem.fromUri(url))
         }
         player.setMediaItems(mediaItems, true)
@@ -138,11 +151,6 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
             mediaSession = mediaSession
         )
         startForeground(NOTIFICATION_ID, notification.build())
-
-        player.addListener(object : Player.Listener {
-
-        })
-
     }
 
     private fun pause() {
@@ -166,7 +174,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         play(musicItem.path)
     }
 
-    private inner class LocalMusicBinder : IMusicPlayerService.Stub() {
+    private inner class LocalMusicBinder : IMusicPlayerManager.Stub() {
 
         fun getMusicService(): MusicPlayService {
             return this@MusicPlayService
@@ -221,6 +229,18 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
                 player.pause()
             } else {
                 player.play()
+            }
+        }
+
+        override fun addPlayerStateChangedListener(listener: IMusicStateListener?) {
+            if (null != listener && !musicStateListenerList.contains(listener)) {
+                musicStateListenerList.add(listener)
+            }
+        }
+
+        override fun removePlayerStateChangedListener(listener: IMusicStateListener?) {
+            if (null != listener) {
+                musicStateListenerList.remove(listener)
             }
         }
     }

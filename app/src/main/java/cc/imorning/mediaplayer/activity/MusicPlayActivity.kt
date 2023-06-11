@@ -30,9 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import cc.imorning.mediaplayer.IMusicPlayerService
+import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.activity.ui.theme.MediaTheme
 import cc.imorning.mediaplayer.data.MusicItem
@@ -40,7 +38,6 @@ import cc.imorning.mediaplayer.service.MusicPlayService
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModel
 import cc.imorning.mediaplayer.viewmodel.MusicPlayViewModelFactory
 import coil.compose.AsyncImage
-import com.google.common.util.concurrent.MoreExecutors
 
 private const val TAG = "MusicPlayActivity"
 
@@ -49,12 +46,18 @@ class MusicPlayActivity : BaseActivity() {
     private lateinit var viewModel: MusicPlayViewModel
     private var musicItem: MusicItem? = null
 
+    /**
+     * whether bind service
+     */
     private var isBound = false
-    private var musicPlayService: IMusicPlayerService? = null
+
+    private var musicPlayerManager: IMusicPlayerManager? = null
+
+    // private val
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            musicPlayService = IMusicPlayerService.Stub.asInterface(service)
-            viewModel.init(this@MusicPlayActivity, musicPlayService)
+            musicPlayerManager = IMusicPlayerManager.Stub.asInterface(service)
+            viewModel.init(this@MusicPlayActivity, musicPlayerManager)
             isBound = true
         }
 
@@ -86,16 +89,6 @@ class MusicPlayActivity : BaseActivity() {
                 }
             }
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
-        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-        controllerFuture.addListener(
-            { controllerFuture.get() },
-            MoreExecutors.directExecutor()
-        )
     }
 
     override fun onDestroy() {
@@ -185,6 +178,7 @@ fun ProgressContent(viewModel: MusicPlayViewModel) {
 fun PlayerControlView(viewModel: MusicPlayViewModel) {
 
     val repeatIcon = viewModel.repeatModeIcon.collectAsState()
+    val playStateIcon = viewModel.playStateIcon.collectAsState()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -214,7 +208,7 @@ fun PlayerControlView(viewModel: MusicPlayViewModel) {
                 viewModel.updatePlayState()
             }) {
                 Icon(
-                    painter = painterResource(id = R.mipmap.ic_play),
+                    painter = painterResource(id = playStateIcon.value),
                     contentDescription = "播放"
                 )
             }
