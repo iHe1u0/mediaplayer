@@ -35,14 +35,14 @@ class MusicPlayViewModel : ViewModel() {
     private val _currentProgress = MutableStateFlow(0f)
     val currentProgress = _currentProgress.asStateFlow()
 
-    private val _currentPos = MutableStateFlow(0f)
-    val currentPosition = _currentPos.asStateFlow()
+    private val _currentPosition = MutableStateFlow(0f)
+    val currentPosition = _currentPosition.asStateFlow()
 
-    private val _maxSeconds = MutableStateFlow("00:00")
-    val maxSecond = _maxSeconds.asStateFlow()
+    private val _maxTimeText = MutableStateFlow("00:00")
+    val maxTimeText = _maxTimeText.asStateFlow()
 
-    private val _currentSeconds = MutableStateFlow("00:00")
-    val currentSeconds = _currentSeconds.asStateFlow()
+    private val _currentTimeText = MutableStateFlow("00:00")
+    val currentTimeText = _currentTimeText.asStateFlow()
 
     private val _repeatModeIcon = MutableStateFlow(R.mipmap.ic_loop_all)
     val repeatModeIcon = _repeatModeIcon.asStateFlow()
@@ -60,12 +60,12 @@ class MusicPlayViewModel : ViewModel() {
 
         override fun onPlayingStateChanged(isPlaying: Boolean) {
             viewModelScope.launch {
-                if (isPlaying) {
+                needUpdateUI = if (isPlaying) {
                     _playStateIcon.emit(R.mipmap.ic_pause)
-                    needUpdateUI = true
+                    true
                 } else {
                     _playStateIcon.emit(R.mipmap.ic_play)
-                    needUpdateUI = false
+                    false
                 }
             }
         }
@@ -76,45 +76,43 @@ class MusicPlayViewModel : ViewModel() {
 
     }
 
-    fun init(context: Context, manager: IMusicPlayerManager?) {
-        if (manager == null) {
-            return
-        }
+    fun init(context: Context, manager: IMusicPlayerManager) {
         _playerManager = manager
         _musicId = _playerManager.musicId
+        _playerManager.addPlayerStateChangedListener(playerStateListener)
         viewModelScope.launch(Dispatchers.IO) {
             val item = MusicHelper.getMusicItem(context, musicId = _musicId)
             _musicItem.emit(item!!)
-            _maxSeconds.emit(TimeUtils.getFormattedTime(_musicItem.value.duration))
+            _maxTimeText.emit(TimeUtils.getFormattedTime(_musicItem.value.duration))
             initLyric(item.name)
-        }
-        viewModelScope.launch(Dispatchers.Main) {
+            val maxTime = _musicItem.value.duration
             withContext(Dispatchers.Main) {
                 while (true) {
+                    _currentPosition.emit(_playerManager.position.toFloat())
                     if (needUpdateUI) {
-                        updateProgress()
+                        updateProgress(maxTime, _currentPosition.value.toLong())
                     }
                     delay(1000)
                 }
             }
         }
-        _playerManager.addPlayerStateChangedListener(playerStateListener)
     }
 
     private fun initLyric(name: String?) {
         viewModelScope.launch(Dispatchers.IO) {
             val lyricApiId = MusicInfoHelper.getIdValue(name.orEmpty())
-            val lyricData = MusicInfoHelper.getLyricValue(lyricApiId)
+            var lyricData = MusicInfoHelper.getLyricValue(lyricApiId)
+            if (lyricData.isNullOrEmpty()) {
+                lyricData = "暂无歌词"
+            }
             _lyric.emit(lyricData.orEmpty())
         }
     }
 
-    private suspend fun updateProgress() {
-        val maxTime = _musicItem.value.duration
-        _currentPos.emit(_playerManager.position.toFloat())
-        val position = _currentPos.value
-        _currentProgress.emit(position.toFloat() / maxTime)
-        _currentSeconds.emit(TimeUtils.getFormattedTime(position.toLong()))
+    private suspend fun updateProgress(max: Long, current: Long) {
+        _currentPosition.emit(current.toFloat())
+        _currentProgress.emit((current / max).toFloat())
+        _currentTimeText.emit(TimeUtils.getFormattedTime(current))
     }
 
     fun updateTime(newTime: Float) {
@@ -151,6 +149,7 @@ class MusicPlayViewModel : ViewModel() {
         _playerManager.playState = 0
     }
 }
+
 class MusicPlayViewModelFactory : ViewModelProvider.Factory {
     @SuppressWarnings("Unchecked")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

@@ -54,8 +54,7 @@
             android:name=".service.MusicPlayService"
             android:enabled="true"
             android:exported="true"
-            android:foregroundServiceType="mediaPlayback"
-            android:process=":MusicPlayerService">
+            android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>

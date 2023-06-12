@@ -58,7 +58,7 @@ class MusicPlayActivity : BaseActivity() {
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             musicPlayerManager = IMusicPlayerManager.Stub.asInterface(service)
-            viewModel.init(this@MusicPlayActivity, musicPlayerManager)
+            viewModel.init(this@MusicPlayActivity, musicPlayerManager!!)
             isBound = true
         }
 
@@ -157,8 +157,8 @@ fun ProgressContent(viewModel: MusicPlayViewModel) {
 
 
     val position = viewModel.currentProgress.collectAsState()
-    val maxTime = viewModel.maxSecond.collectAsState()
-    val currentTime = viewModel.currentSeconds.collectAsState()
+    val maxTime = viewModel.maxTimeText.collectAsState()
+    val currentTime = viewModel.currentTimeText.collectAsState()
 
     Row(
         modifier = Modifier

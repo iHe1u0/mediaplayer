@@ -49,11 +49,6 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
      */
     private lateinit var mediaItems: MutableList<MediaItem>
 
-    /**
-     * play state
-     */
-    private var isPlaying = false
-
     private val musicStateListenerList: CopyOnWriteArrayList<IMusicStateListener> =
         CopyOnWriteArrayList()
 
@@ -64,20 +59,6 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
             .build()
-        player.addListener(object : Player.Listener {
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                for (listener in musicStateListenerList){
-                    listener.onPlayingStateChanged(isPlaying)
-                }
-                super.onIsPlayingChanged(isPlaying)
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-            }
-        })
-
         // Create a MediaSessionCompat
         mediaSession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
             .build()
@@ -151,6 +132,17 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
             mediaSession = mediaSession
         )
         startForeground(NOTIFICATION_ID, notification.build())
+
+        player.addListener(object : Player.Listener {
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                for (listener in musicStateListenerList){
+                    listener.onPlayingStateChanged(isPlaying)
+                }
+                super.onIsPlayingChanged(isPlaying)
+            }
+
+        })
     }
 
     private fun pause() {

@@ -40,10 +40,13 @@ object MusicInfoHelper {
         }
     }
 
-    private var _id: Int = -1
+    private var musicId: Int = -1
     private var lyric: String? = null
 
-    suspend fun getLyricValue(id: Int): String? {
+    fun getLyricValue(id: Int): String? {
+        if (id < 0) {
+            return null
+        }
         getLyric(id)
         return runCatching {
             val startTime = System.currentTimeMillis()
@@ -52,27 +55,25 @@ object MusicInfoHelper {
                     break
                 }
             }
-            _id = -1
             lyric
         }.getOrElse {
             null
         }
     }
 
-    suspend fun getIdValue(name: String): Int {
+    fun getIdValue(name: String): Int {
         if (name.isEmpty()) {
             return -1
         }
-        lyric = null
         getMusicInfo(name)
         return runCatching {
             val startTime = System.currentTimeMillis()
-            while (_id < 0) {
+            while (musicId < 0) {
                 if (System.currentTimeMillis() - startTime > 10000) {
                     break
                 }
             }
-            _id
+            musicId
         }.getOrElse {
             -1
         }
@@ -102,6 +103,8 @@ object MusicInfoHelper {
     }
 
     private fun getMusicInfo(name: String) {
+        this.musicId = -1
+        this.lyric = null
         val retrofit = retrofit2.Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(okHttpClientBuilder.build())
@@ -122,8 +125,8 @@ object MusicInfoHelper {
                     if (musicInfo != null) {
                         when (musicInfo.code) {
                             200 -> {
-                                _id = musicInfo.result.songs[0].id
-                                getLyric(_id)
+                                musicId = musicInfo.result.songs[0].id
+                                getLyric(musicId)
                             }
 
                             else -> {

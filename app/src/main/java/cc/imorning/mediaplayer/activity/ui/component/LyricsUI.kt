@@ -28,13 +28,14 @@ fun LyricsUI(
         // Text(text = currentEntry?.text ?: "", textAlign = TextAlign.Center)
         LazyColumn(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
         ) {
             items(entries.size) { index ->
                 Text(
                     text = entries[index].text,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
                     textAlign = TextAlign.Center,
                     // if (entries[index] == currentEntry) TextAlign.Center else TextAlign.Start,
                     color = if (entries[index].time > liveTime) Color.Gray else Color.Black
