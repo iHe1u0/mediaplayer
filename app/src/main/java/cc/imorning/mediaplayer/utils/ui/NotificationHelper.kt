@@ -42,7 +42,7 @@ class NotificationHelper private constructor(var context: Context) {
     fun buildMusicPlayingNotification(
         musicName: String?,
         artist: String?,
-        mediaSession: MediaSession?
+        mediaSessionToken: MediaSession?
     ): NotificationCompat.Builder {
 
         val channelID = NotificationID.MusicPlay.name
@@ -54,9 +54,33 @@ class NotificationHelper private constructor(var context: Context) {
             // Make the transport controls visible on the lockscreen
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setSmallIcon(R.mipmap.ic_media)
-            // Add an app icon and set its accent color
-            // Be careful about the color
-            // color = Color.BLUE
+            setStyle(mediaSessionToken?.let {
+                androidx.media3.session.MediaStyleNotificationHelper.MediaStyle(
+                    it
+                )
+            })
+            addAction(
+                NotificationCompat.Action(
+                    R.drawable.media3_notification_seek_to_previous,
+                    "上一首",
+                    null
+                )
+            )
+            addAction(
+                NotificationCompat.Action(
+                    R.drawable.media3_notification_pause,
+                    "暂停",
+                    null
+                )
+            )
+            addAction(
+                NotificationCompat.Action(
+                    R.drawable.media3_notification_seek_to_next,
+                    "下一首",
+                    null
+                )
+            )
+
         }
 
         return builder

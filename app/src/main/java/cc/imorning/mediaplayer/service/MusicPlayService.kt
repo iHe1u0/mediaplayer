@@ -1,8 +1,8 @@
 package cc.imorning.mediaplayer.service
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
@@ -10,6 +10,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionToken
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.data.MusicItem
@@ -42,7 +43,8 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
      * this music item will save information of current music
      */
     private lateinit var musicItem: MusicItem
-    private var mediaSession: MediaLibrarySession? = null
+    private var mediaLibrarySession: MediaLibrarySession? = null
+    private var mediaSession: MediaSession? = null
 
     /**
      * music list
@@ -60,7 +62,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
             .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
             .build()
         // Create a MediaSessionCompat
-        mediaSession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
+        mediaLibrarySession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
             .build()
         notificationHelper = NotificationHelper.getInstance(this)
     }
@@ -79,6 +81,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
                     // .add(SessionCommand(REWIND_30, Bundle()))
                     // .add(SessionCommand(FAST_FWD_30, Bundle()))
                     .build()
+            mediaSession = session
             return MediaSession.ConnectionResult.accept(
                 sessionCommands, connectionResult.availablePlayerCommands
             )
@@ -90,7 +93,6 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         handleCommand(intent?.getStringExtra(MUSIC_ID))
-        // val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -100,7 +102,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
-        mediaSession
+        mediaLibrarySession
 
     override fun onAddMediaItems(
         mediaSession: MediaSession,
@@ -126,17 +128,19 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         player.play()
         // TODO: remove here
         player.repeatMode = Player.REPEAT_MODE_ALL
+
+        val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
         val notification = notificationHelper.buildMusicPlayingNotification(
             musicName = musicItem.name,
             artist = musicItem.artists,
-            mediaSession = mediaSession
+            mediaSessionToken = mediaSession
         )
         startForeground(NOTIFICATION_ID, notification.build())
 
         player.addListener(object : Player.Listener {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                for (listener in musicStateListenerList){
+                for (listener in musicStateListenerList) {
                     listener.onPlayingStateChanged(isPlaying)
                 }
                 super.onIsPlayingChanged(isPlaying)
@@ -161,10 +165,14 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         if (null == musicId) {
             return
         }
+        if (this.musicId == musicId) {
+            // start with same music id
+            return
+        }
         this.musicId = musicId
         musicItem = MusicHelper.getMusicItem(this, musicId)!!
         play(musicItem.path)
-        for (listener in musicStateListenerList){
+        for (listener in musicStateListenerList) {
             listener.onMusicItemChanged(musicItem.name)
         }
     }
@@ -243,10 +251,10 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
 
     override fun onDestroy() {
         stop()
-        mediaSession?.run {
+        mediaLibrarySession?.run {
             player.release()
             release()
-            mediaSession = null
+            mediaLibrarySession = null
         }
         stopSelf()
         super.onDestroy()

@@ -1,45 +1,79 @@
 package cc.imorning.mediaplayer.activity.ui.component
 
+import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
+private const val TAG = "LyricsUI"
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LyricsUI(
     liveTime: Long = 0L,
     lyricsEntryList: String
 ) {
     // 解析歌词，并按照时间排序
-    val entries = parseLyrics(lyricsEntryList)
-        .sortedBy { it.time }
+    val entries = parseLyrics(lyricsEntryList).sortedBy { it.time }
 
     // 在所有歌词文本中，找到与当前时间对应的那句歌词
     val currentEntry = entries.findLast { it.time <= liveTime }
+    val lazyListState = rememberLazyListState()
+    val itemCount =
+        remember { derivedStateOf { lazyListState.layoutInfo.visibleItemsInfo.count() } }
+    LaunchedEffect(currentEntry) {
+        val index = entries.indexOf(currentEntry) - itemCount.value / 2
+        if (index >= 0) {
+            lazyListState.animateScrollToItem(index)
+        }
+    }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Text(text = currentEntry?.text ?: "", textAlign = TextAlign.Center)
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            state = lazyListState,
+            // flingBehavior = rememberSnapFlingBehavior(lazyListState)
         ) {
             items(entries.size) { index ->
-                Text(
-                    text = entries[index].text,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    textAlign = TextAlign.Center,
-                    // if (entries[index] == currentEntry) TextAlign.Center else TextAlign.Start,
-                    color = if (entries[index].time > liveTime) Color.Gray else Color.Black
-                )
+                if (entries[index] == currentEntry) {
+                    Text(
+                        text = entries[index].text,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else {
+                    Text(
+                        text = entries[index].text,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }
