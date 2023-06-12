@@ -1,6 +1,7 @@
 package cc.imorning.mediaplayer.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -90,7 +91,7 @@ class MusicPlayViewModel : ViewModel() {
                 while (true) {
                     _currentPosition.emit(_playerManager.position.toFloat())
                     if (needUpdateUI) {
-                        updateProgress(maxTime, _currentPosition.value.toLong())
+                        updateUI(maxTime, _currentPosition.value.toLong())
                     }
                     delay(1000)
                 }
@@ -109,9 +110,8 @@ class MusicPlayViewModel : ViewModel() {
         }
     }
 
-    private suspend fun updateProgress(max: Long, current: Long) {
-        _currentPosition.emit(current.toFloat())
-        _currentProgress.emit((current / max).toFloat())
+    private suspend fun updateUI(max: Long, current: Long) {
+        _currentProgress.emit(current.toFloat() / max.toFloat())
         _currentTimeText.emit(TimeUtils.getFormattedTime(current))
     }
 
