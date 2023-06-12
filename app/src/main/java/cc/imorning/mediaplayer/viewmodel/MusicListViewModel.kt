@@ -12,12 +12,13 @@ import cc.imorning.mediaplayer.utils.list.MusicHelper
 import cc.imorning.mediaplayer.utils.ui.ToastUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class MusicListViewModel : ViewModel() {
 
     private val _musicItems = MutableStateFlow(mutableListOf<MusicItem>())
-    val musicItems: StateFlow<MutableList<MusicItem>> get() = _musicItems
+    val musicItems get() = _musicItems.asStateFlow()
 
     fun update(context: Context) {
         if (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {

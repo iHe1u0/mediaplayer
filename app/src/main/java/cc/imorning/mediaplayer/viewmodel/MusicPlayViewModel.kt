@@ -1,7 +1,6 @@
 package cc.imorning.mediaplayer.viewmodel
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -152,9 +151,8 @@ class MusicPlayViewModel : ViewModel() {
         _playerManager.playState = 0
     }
 }
-
 class MusicPlayViewModelFactory : ViewModelProvider.Factory {
-
+    @SuppressWarnings("Unchecked")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MusicPlayViewModel::class.java)) {
             return MusicPlayViewModel() as T

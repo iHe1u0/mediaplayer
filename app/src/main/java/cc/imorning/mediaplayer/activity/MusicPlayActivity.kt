@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.compose.setContent
@@ -70,7 +71,12 @@ class MusicPlayActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        musicItem = intent.getParcelableExtra(ITEM)
+        musicItem = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(ITEM, MusicItem::class.java)
+        } else {
+            intent.getParcelableExtra(ITEM)
+        }
+
         viewModel =
             ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
 
