@@ -20,13 +20,11 @@ import androidx.compose.ui.unit.dp
 
 private const val TAG = "LyricsUI"
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LyricsUI(
     liveTime: Long = 0L,
     lyricsEntryList: String
 ) {
-    var time = 0L
     // 解析歌词，并按照时间排序
     val entries = parseLyrics(lyricsEntryList).sortedBy { it.time }
 
@@ -42,12 +40,10 @@ fun LyricsUI(
         }
     }
 
-
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             state = lazyListState,
-            // flingBehavior = rememberSnapFlingBehavior(lazyListState)
         ) {
             items(entries.size) { index ->
                 if (entries[index] == currentEntry) {
@@ -75,12 +71,12 @@ fun LyricsUI(
     }
 }
 
-data class LyricEntry(val time: Long, val text: String)
+internal data class LyricEntry(val time: Long, val text: String)
 
 private fun parseLyrics(rawText: String): List<LyricEntry> {
     return rawText.split("\n")
         .mapNotNull { entryText ->
-            val matcher = Regex("\\[(\\d{2}):(\\d{2}).(\\d{2})]\\s*(.*)").find(entryText)
+            val matcher = Regex("\\[(\\d{0,4}):(\\d{0,2}).(\\d{0,4})]\\s*(.*)").find(entryText)
             with(matcher?.groupValues) {
                 if (this != null && size >= 5) {
                     val time =
