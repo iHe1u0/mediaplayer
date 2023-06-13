@@ -57,24 +57,6 @@
     </issue>
 
     <issue
-        id="ExportedService"
-        message="Exported service does not require permission"
-        errorLine1="        &lt;service"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="53"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`.">
-        <location
-            file="src/main/res/mipmap-anydpi-v26"/>
-    </issue>
-
-    <issue
         id="UnusedResources"
         message="The resource `R.color.purple_200` appears to be unused"
         errorLine1="    &lt;color name=&quot;purple_200&quot;>#FFBB86FC&lt;/color>"
@@ -213,7 +195,7 @@
         errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
         errorLine2="^">
         <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+            file="src/main/res/mipmap-anydpi/ic_launcher.xml"
             line="2"
             column="1"/>
     </issue>
@@ -246,7 +228,7 @@
         errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
         errorLine2="^">
         <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml"
+            file="src/main/res/mipmap-anydpi/ic_launcher_round.xml"
             line="2"
             column="1"/>
     </issue>
@@ -312,28 +294,6 @@
         message="The resource `R.mipmap.ic_volume_silence` appears to be unused">
         <location
             file="src/main/res/mipmap-hdpi/ic_volume_silence.png"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.notification_music_playing` appears to be unused"
-        errorLine1="&lt;RelativeLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/notification_music_playing.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.full_screen` appears to be unused"
-        errorLine1="    &lt;string name=&quot;full_screen&quot;>全屏播放&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="4"
-            column="13"/>
     </issue>
 
     <issue

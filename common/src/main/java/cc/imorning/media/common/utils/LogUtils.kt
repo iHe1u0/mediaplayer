@@ -1,4 +1,4 @@
-package cc.imorning.mediaplayer.utils
+package cc.imorning.media.common.utils
 
 import android.text.TextUtils
 import android.util.Log

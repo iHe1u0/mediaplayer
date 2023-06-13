@@ -101,6 +101,7 @@ android {
 
 dependencies {
     implementation(project(mapOf("path" to ":network")))
+    implementation(project(mapOf("path" to ":common")))
 
     implementation(libs.coil)
     implementation(libs.androidx.core.ktx)

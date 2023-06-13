@@ -5,14 +5,19 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.widget.RemoteViews
 import androidx.annotation.LayoutRes
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaStyleNotificationHelper
 import cc.imorning.mediaplayer.R
+import cc.imorning.mediaplayer.activity.MusicPlayActivity
 
 class NotificationHelper private constructor(var context: Context) {
 
@@ -35,55 +40,72 @@ class NotificationHelper private constructor(var context: Context) {
     }
 
     enum class NotificationID {
-        Default, MusicPlay
+        @Deprecated(
+            message =
+            "for some reason,we can't use 0 for notification id",
+            ReplaceWith("Default"), DeprecationLevel.ERROR
+        )
+        None,
+        Default,
+        MusicPlay
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     fun buildMusicPlayingNotification(
         musicName: String?,
         artist: String?,
-        mediaSessionToken: MediaSession?
+        session: MediaSession
     ): NotificationCompat.Builder {
-
-        val channelID = NotificationID.MusicPlay.name
-
-        val builder = NotificationCompat.Builder(context, channelID).apply {
-            setSubText(artist)
-            setContentTitle(musicName)
-            setContentText(artist)
+        val player = session.player
+        val metadata = player.mediaMetadata
+        val intent = Intent(context, MusicPlayActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
+        )
+        val playPauseAction = NotificationCompat.Action(
+            R.drawable.media3_notification_play,
+            "Play",
+            pendingIntent
+        )
+        return NotificationCompat.Builder(context, NotificationID.MusicPlay.name).apply {
+            setContentTitle(metadata.title)
+            setContentText(metadata.albumArtist)
             // Make the transport controls visible on the lockscreen
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setSmallIcon(R.mipmap.ic_media)
-            setStyle(mediaSessionToken?.let {
-                androidx.media3.session.MediaStyleNotificationHelper.MediaStyle(
-                    it
-                )
-            })
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.media3_notification_seek_to_previous,
-                    "上一首",
-                    null
-                )
+            addAction(playPauseAction)
+            setStyle(
+                MediaStyleNotificationHelper.MediaStyle(session)
+                    .setShowCancelButton(false)
+                    .setShowActionsInCompactView(0)
             )
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.media3_notification_pause,
-                    "暂停",
-                    null
-                )
-            )
-            addAction(
-                NotificationCompat.Action(
-                    R.drawable.media3_notification_seek_to_next,
-                    "下一首",
-                    null
-                )
-            )
+            setContentIntent(session.sessionActivity)
+//            addAction(
+//                NotificationCompat.Action(
+//                    R.drawable.media3_notification_seek_to_previous,
+//                    "上一首",
+//                    null
+//                )
+//            )
+//            addAction(
+//                NotificationCompat.Action(
+//                    R.drawable.media3_notification_pause,
+//                    "暂停",
+//                    null
+//                )
+//            )
+//            addAction(
+//                NotificationCompat.Action(
+//                    R.drawable.media3_notification_seek_to_next,
+//                    "下一首",
+//                    null
+//                )
+//            )
 
         }
-
-        return builder
     }
 
     fun notify(id: Int, notification: Notification) {

@@ -1,21 +1,26 @@
 package cc.imorning.mediaplayer.service
 
-import android.content.ComponentName
 import android.content.Intent
+import android.os.Bundle
 import android.os.IBinder
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
+import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
-import androidx.media3.session.SessionToken
+import androidx.media3.session.MediaSessionService
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.list.MusicHelper
 import cc.imorning.mediaplayer.utils.ui.NotificationHelper
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CopyOnWriteArrayList
@@ -25,12 +30,14 @@ private const val TAG = "MusicPlayService"
 private const val MY_MEDIA_ROOT_ID = "media_root_id"
 private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
-class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
+class MusicPlayService : MediaSessionService(), MediaSession.Callback {
 
     companion object {
         const val MUSIC_ID = "url"
         val NOTIFICATION_ID = NotificationHelper.NotificationID.MusicPlay.ordinal
     }
+
+    private val localMusicBinder = LocalMusicBinder()
 
     // music id from intent
     private var musicId = "0"
@@ -54,42 +61,25 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
     private val musicStateListenerList: CopyOnWriteArrayList<IMusicStateListener> =
         CopyOnWriteArrayList()
 
-    @OptIn(androidx.media3.common.util.UnstableApi::class)
+    @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
         // Create media player
         player = ExoPlayer.Builder(this)
-            .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
+            .setAudioAttributes(
+                /* audioAttributes = */ AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                /* handleAudioFocus = */ true
+            )
             .build()
         // Create a MediaSessionCompat
-        mediaLibrarySession = MediaLibrarySession.Builder(this, player, LocalMusicSessionCallback())
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(this)
             .build()
         notificationHelper = NotificationHelper.getInstance(this)
     }
-
-    private inner class LocalMusicSessionCallback : MediaLibrarySession.Callback {
-
-        override fun onConnect(
-            session: MediaSession,
-            controller: MediaSession.ControllerInfo
-        ): MediaSession.ConnectionResult {
-            val connectionResult = super.onConnect(session, controller)
-            val sessionCommands =
-                connectionResult.availableSessionCommands
-                    .buildUpon()
-                    // Add custom commands
-                    // .add(SessionCommand(REWIND_30, Bundle()))
-                    // .add(SessionCommand(FAST_FWD_30, Bundle()))
-                    .build()
-            mediaSession = session
-            return MediaSession.ConnectionResult.accept(
-                sessionCommands, connectionResult.availablePlayerCommands
-            )
-        }
-
-    }
-
-    private val localMusicBinder = LocalMusicBinder()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         handleCommand(intent?.getStringExtra(MUSIC_ID))
@@ -114,7 +104,7 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         return Futures.immediateFuture(updatedMediaItems)
     }
 
-    @OptIn(androidx.media3.common.util.UnstableApi::class)
+    @OptIn(UnstableApi::class)
     private fun play(url: String?) {
         if (null == url) {
             return
@@ -129,14 +119,21 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         // TODO: remove here
         player.repeatMode = Player.REPEAT_MODE_ALL
 
-        val sessionToken = SessionToken(this, ComponentName(this, MusicPlayService::class.java))
-        val notification = notificationHelper.buildMusicPlayingNotification(
+        val notificationBuilder = notificationHelper.buildMusicPlayingNotification(
             musicName = musicItem.name,
             artist = musicItem.artists,
-            mediaSessionToken = mediaSession
+            session = mediaSession!!
         )
-        startForeground(NOTIFICATION_ID, notification.build())
-
+        val notification = notificationBuilder.build()
+        startForeground(NOTIFICATION_ID, notification)
+        setMediaNotificationProvider(
+            MediaNotificationBuilder(
+                MediaNotification(
+                    NOTIFICATION_ID,
+                    notification
+                )
+            )
+        )
         player.addListener(object : Player.Listener {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -165,15 +162,35 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
         if (null == musicId) {
             return
         }
-        if (this.musicId == musicId) {
-            // start with same music id
-            return
+        if (this.musicId != musicId) {
+            this.musicId = musicId
+            musicItem = MusicHelper.getMusicItem(this, musicId)!!
+            play(musicItem.path)
         }
-        this.musicId = musicId
-        musicItem = MusicHelper.getMusicItem(this, musicId)!!
-        play(musicItem.path)
         for (listener in musicStateListenerList) {
             listener.onMusicItemChanged(musicItem.name)
+        }
+    }
+
+    @UnstableApi
+    private inner class MediaNotificationBuilder(mediaNotification: MediaNotification) :
+        MediaNotification.Provider {
+        val notification = mediaNotification
+        override fun createNotification(
+            mediaSession: MediaSession,
+            customLayout: ImmutableList<CommandButton>,
+            actionFactory: MediaNotification.ActionFactory,
+            onNotificationChangedCallback: MediaNotification.Provider.Callback
+        ): MediaNotification {
+            return notification
+        }
+
+        override fun handleCustomCommand(
+            session: MediaSession,
+            action: String,
+            extras: Bundle
+        ): Boolean {
+            return false
         }
     }
 
@@ -262,5 +279,9 @@ class MusicPlayService : MediaLibraryService(), MediaSession.Callback {
 
     enum class PlayerState {
         STOP, PLAYING, PAUSE, NULL
+    }
+
+    enum class PlayerController {
+        PREVIOUS, PLAY, PAUSE, NEXT, STOP
     }
 }

@@ -81,7 +81,9 @@ class MusicPlayActivity : BaseActivity() {
             ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
 
         val service = Intent(this, MusicPlayService::class.java)
-        service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
+        if (null != intent && musicItem != null) {
+            service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
+        }
         ContextCompat.startForegroundService(this, service)
         bindService(service, serviceConnection, Context.BIND_AUTO_CREATE)
 

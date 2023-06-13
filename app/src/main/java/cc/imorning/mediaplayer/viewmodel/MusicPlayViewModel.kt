@@ -1,18 +1,25 @@
 package cc.imorning.mediaplayer.viewmodel
 
+import android.content.ComponentName
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import cc.imorning.media.network.music.MusicInfoHelper
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.data.MusicItem
+import cc.imorning.mediaplayer.service.MusicPlayService
 import cc.imorning.mediaplayer.utils.TimeUtils
 import cc.imorning.mediaplayer.utils.list.MusicHelper
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,14 +35,23 @@ class MusicPlayViewModel : ViewModel() {
 
     private lateinit var _playerManager: IMusicPlayerManager
 
+    /**
+     * stop update ui when music pause or stop
+     */
     private var needUpdateUI = false
 
     private val _musicItem = MutableStateFlow(MusicItem())
     val musicItem = _musicItem.asStateFlow()
 
+    /**
+     * value for SeekBar, value is between 0.0 ~ 1.0
+     */
     private val _currentProgress = MutableStateFlow(0f)
     val currentProgress = _currentProgress.asStateFlow()
 
+    /**
+     * real time of current position
+     */
     private val _currentPosition = MutableStateFlow(0f)
     val currentPosition = _currentPosition.asStateFlow()
 
@@ -89,8 +105,8 @@ class MusicPlayViewModel : ViewModel() {
             val maxTime = _musicItem.value.duration
             withContext(Dispatchers.Main) {
                 while (true) {
-                    _currentPosition.emit(_playerManager.position.toFloat())
                     if (needUpdateUI) {
+                        _currentPosition.emit(_playerManager.position.toFloat())
                         updateUI(maxTime, _currentPosition.value.toLong())
                     }
                     delay(1000)
@@ -104,9 +120,9 @@ class MusicPlayViewModel : ViewModel() {
             val lyricApiId = MusicInfoHelper.getIdValue(name.orEmpty())
             var lyricData = MusicInfoHelper.getLyricValue(lyricApiId)
             if (lyricData.isNullOrEmpty()) {
-                lyricData = "暂无歌词"
+                lyricData = "[999:99]暂无歌词"
             }
-            _lyric.emit(lyricData.orEmpty())
+            _lyric.emit(lyricData)
         }
     }
 
