@@ -9,11 +9,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.support.v4.media.session.PlaybackStateCompat
 import android.widget.RemoteViews
 import androidx.annotation.LayoutRes
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.media3.common.Player
+import androidx.media.session.MediaButtonReceiver
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaStyleNotificationHelper
 import cc.imorning.mediaplayer.R
@@ -51,11 +52,7 @@ class NotificationHelper private constructor(var context: Context) {
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    fun buildMusicPlayingNotification(
-        musicName: String?,
-        artist: String?,
-        session: MediaSession
-    ): NotificationCompat.Builder {
+    fun buildMusicPlayingNotification(session: MediaSession): NotificationCompat.Builder {
         val player = session.player
         val metadata = player.mediaMetadata
         val intent = Intent(context, MusicPlayActivity::class.java)
@@ -68,7 +65,10 @@ class NotificationHelper private constructor(var context: Context) {
         val playPauseAction = NotificationCompat.Action(
             R.drawable.media3_notification_play,
             "Play",
-            pendingIntent
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                context,
+                PlaybackStateCompat.ACTION_PLAY_PAUSE
+            )
         )
         return NotificationCompat.Builder(context, NotificationID.MusicPlay.name).apply {
             setContentTitle(metadata.title)

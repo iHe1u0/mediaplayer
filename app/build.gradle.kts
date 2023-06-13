@@ -106,6 +106,7 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.media)
     // For media playback using ExoPlayer
     implementation(libs.media3.exoplayer)
     // For loading data using the Cronet network stack

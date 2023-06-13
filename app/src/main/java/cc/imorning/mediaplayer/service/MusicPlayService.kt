@@ -120,8 +120,6 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         player.repeatMode = Player.REPEAT_MODE_ALL
 
         val notificationBuilder = notificationHelper.buildMusicPlayingNotification(
-            musicName = musicItem.name,
-            artist = musicItem.artists,
             session = mediaSession!!
         )
         val notification = notificationBuilder.build()

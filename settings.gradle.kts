@@ -21,6 +21,7 @@ dependencyResolutionManagement {
             version("coil_version", "2.4.0")
             version("gson_version", "2.10.1")
             version("retrofit_version", "2.9.0")
+            version("media_version", "1.6.0")
             version("media3_version", "1.0.2")
             version("core_version", "1.9.0")
             version("appcompat_version", "1.6.1")
@@ -42,6 +43,7 @@ dependencyResolutionManagement {
                 "converter-gson"
             ).versionRef("retrofit_version")
 
+            library("androidx-media", "androidx.media", "media").versionRef("media_version")
             library(
                 "media3-exoplayer",
                 "androidx.media3",
