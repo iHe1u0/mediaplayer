@@ -1,22 +1,28 @@
 package cc.imorning.mediaplayer.service
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.R as mediaR
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
+import cc.imorning.mediaplayer.R
+import cc.imorning.mediaplayer.activity.MusicPlayActivity
 import cc.imorning.mediaplayer.data.MusicItem
 import cc.imorning.mediaplayer.utils.list.MusicHelper
 import cc.imorning.mediaplayer.utils.ui.NotificationHelper
@@ -26,9 +32,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 private const val TAG = "MusicPlayService"
-
-private const val MY_MEDIA_ROOT_ID = "media_root_id"
-private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
 
 class MusicPlayService : MediaSessionService(), MediaSession.Callback {
 
@@ -77,12 +80,26 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         // Create a MediaSessionCompat
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(this)
+            .setSessionActivity(
+                PendingIntent.getActivity(
+                    this,
+                    1,
+                    Intent(this, MusicPlayActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            )
             .build()
+
         notificationHelper = NotificationHelper.getInstance(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        handleCommand(intent?.getStringExtra(MUSIC_ID))
+        val command = intent?.getStringExtra(MUSIC_ID)
+        if (command != null) {
+            handleCommand(intent.getStringExtra(MUSIC_ID))
+        } else {
+            handleCommand(null)
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -124,14 +141,6 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
         )
         val notification = notificationBuilder.build()
         startForeground(NOTIFICATION_ID, notification)
-        setMediaNotificationProvider(
-            MediaNotificationBuilder(
-                MediaNotification(
-                    NOTIFICATION_ID,
-                    notification
-                )
-            )
-        )
         player.addListener(object : Player.Listener {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -157,6 +166,9 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
     }
 
     private fun handleCommand(musicId: String?) {
+        for (listener in musicStateListenerList) {
+            listener.onMusicItemChanged(musicItem.name)
+        }
         if (null == musicId) {
             return
         }
@@ -164,9 +176,6 @@ class MusicPlayService : MediaSessionService(), MediaSession.Callback {
             this.musicId = musicId
             musicItem = MusicHelper.getMusicItem(this, musicId)!!
             play(musicItem.path)
-        }
-        for (listener in musicStateListenerList) {
-            listener.onMusicItemChanged(musicItem.name)
         }
     }
 

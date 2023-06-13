@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -78,15 +79,16 @@ class MusicPlayActivity : BaseActivity() {
             intent.getParcelableExtra(ITEM)
         }
 
-        viewModel =
-            ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
-
         val service = Intent(this, MusicPlayService::class.java)
         if (null != intent && musicItem != null) {
             service.putExtra(MusicPlayService.MUSIC_ID, musicItem!!.id)
+            ContextCompat.startForegroundService(this, service)
         }
-        ContextCompat.startForegroundService(this, service)
-        bindService(service, serviceConnection, Context.BIND_AUTO_CREATE)
+        if (!isBound) {
+            viewModel =
+                ViewModelProvider(this, MusicPlayViewModelFactory())[MusicPlayViewModel::class.java]
+            bindService(service, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
 
         setContent {
             MediaTheme {
@@ -113,7 +115,6 @@ class MusicPlayActivity : BaseActivity() {
     override fun onDestroy() {
         if (isBound) {
             unbindService(serviceConnection)
-            isBound = false
         }
         super.onDestroy()
     }

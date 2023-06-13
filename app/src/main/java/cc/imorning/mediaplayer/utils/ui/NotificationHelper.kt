@@ -12,13 +12,18 @@ import android.content.pm.PackageManager
 import android.support.v4.media.session.PlaybackStateCompat
 import android.widget.RemoteViews
 import androidx.annotation.LayoutRes
+import androidx.annotation.OptIn
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.session.MediaButtonReceiver
+import androidx.media3.common.Player
+import androidx.media3.session.CommandButton
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaStyleNotificationHelper
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.activity.MusicPlayActivity
+import com.google.common.collect.ImmutableList
 
 class NotificationHelper private constructor(var context: Context) {
 
@@ -51,23 +56,65 @@ class NotificationHelper private constructor(var context: Context) {
         MusicPlay
     }
 
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @OptIn(androidx.media3.common.util.UnstableApi::class)
+    private inner class CustomNotificationProvider(val context: Context, val player: Player) :
+        DefaultMediaNotificationProvider(context) {
+        override fun getMediaButtons(
+            session: MediaSession,
+            playerCommands: Player.Commands,
+            customLayout: ImmutableList<CommandButton>,
+            showPauseButton: Boolean
+        ): ImmutableList<CommandButton> {
+            val seekToPreviousCommandButton = CommandButton.Builder().apply {
+                setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS)
+                setIconResId(R.mipmap.ic_left)
+                setEnabled(true)
+            }.build()
+            val playCommandButton = CommandButton.Builder().apply {
+                setPlayerCommand(Player.COMMAND_PLAY_PAUSE)
+                setIconResId(if (player.isPlaying) R.mipmap.ic_pause else R.mipmap.ic_play)
+                setEnabled(true)
+            }.build()
+            val seekToNextCommandButton = CommandButton.Builder().apply {
+                setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT)
+                setIconResId(R.mipmap.ic_right)
+                setEnabled(true)
+            }.build()
+            val commandButtons: MutableList<CommandButton> = mutableListOf(
+                seekToPreviousCommandButton,
+                playCommandButton,
+                seekToNextCommandButton
+            )
+            return ImmutableList.copyOf(commandButtons)
+        }
+    }
+
+    @OptIn(androidx.media3.common.util.UnstableApi::class)
     fun buildMusicPlayingNotification(session: MediaSession): NotificationCompat.Builder {
         val player = session.player
         val metadata = player.mediaMetadata
-        val intent = Intent(context, MusicPlayActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
+        val preAction = NotificationCompat.Action(
+            R.drawable.media3_notification_seek_to_previous,
+            "Preview",
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                context,
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
         )
         val playPauseAction = NotificationCompat.Action(
-            R.drawable.media3_notification_play,
+            if (player.isPlaying) R.drawable.media3_notification_pause else R.drawable.media3_notification_play,
             "Play",
             MediaButtonReceiver.buildMediaButtonPendingIntent(
                 context,
                 PlaybackStateCompat.ACTION_PLAY_PAUSE
+            )
+        )
+        val nextAction = NotificationCompat.Action(
+            R.drawable.media3_notification_seek_to_next,
+            "Next",
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                context,
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT
             )
         )
         return NotificationCompat.Builder(context, NotificationID.MusicPlay.name).apply {
@@ -76,35 +123,15 @@ class NotificationHelper private constructor(var context: Context) {
             // Make the transport controls visible on the lockscreen
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setSmallIcon(R.mipmap.ic_media)
+            addAction(preAction)
             addAction(playPauseAction)
+            addAction(nextAction)
             setStyle(
                 MediaStyleNotificationHelper.MediaStyle(session)
                     .setShowCancelButton(false)
                     .setShowActionsInCompactView(0)
             )
             setContentIntent(session.sessionActivity)
-//            addAction(
-//                NotificationCompat.Action(
-//                    R.drawable.media3_notification_seek_to_previous,
-//                    "上一首",
-//                    null
-//                )
-//            )
-//            addAction(
-//                NotificationCompat.Action(
-//                    R.drawable.media3_notification_pause,
-//                    "暂停",
-//                    null
-//                )
-//            )
-//            addAction(
-//                NotificationCompat.Action(
-//                    R.drawable.media3_notification_seek_to_next,
-//                    "下一首",
-//                    null
-//                )
-//            )
-
         }
     }
 
