@@ -38,9 +38,19 @@ object LogUtils {
     }
 
     @JvmStatic
-    fun e(tag: String?, log: String?) {
+    fun e(tag: String, log: String) {
         if (debugMode) {
-            if (!TextUtils.isEmpty(log)) Log.e(tag, log!!)
+            this.e(tag, log, null)
         }
     }
+
+    @JvmStatic
+    fun e(tag: String?, log: String, throwable: Throwable?) {
+        if (debugMode) {
+            if (!TextUtils.isEmpty(log)) {
+                Log.e(tag, log, throwable)
+            }
+        }
+    }
+
 }

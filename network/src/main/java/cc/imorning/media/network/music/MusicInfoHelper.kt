@@ -61,7 +61,7 @@ object MusicInfoHelper {
         }
     }
 
-    fun getIdValue(name: String): Int {
+    fun getMusicId(name: String): Int {
         if (name.isEmpty()) {
             return -1
         }

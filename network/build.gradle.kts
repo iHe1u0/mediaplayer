@@ -39,6 +39,7 @@ android {
 }
 
 dependencies {
+    implementation(project(mapOf("path" to ":common")))
     implementation(libs.gson)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)

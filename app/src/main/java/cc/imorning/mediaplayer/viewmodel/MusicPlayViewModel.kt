@@ -1,25 +1,17 @@
 package cc.imorning.mediaplayer.viewmodel
 
-import android.content.ComponentName
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
 import cc.imorning.media.network.music.MusicInfoHelper
 import cc.imorning.mediaplayer.IMusicPlayerManager
 import cc.imorning.mediaplayer.IMusicStateListener
 import cc.imorning.mediaplayer.R
 import cc.imorning.mediaplayer.data.MusicItem
-import cc.imorning.mediaplayer.service.MusicPlayService
 import cc.imorning.mediaplayer.utils.TimeUtils
 import cc.imorning.mediaplayer.utils.list.MusicHelper
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,7 +109,7 @@ class MusicPlayViewModel : ViewModel() {
 
     private fun initLyric(name: String?) {
         viewModelScope.launch(Dispatchers.IO) {
-            val lyricApiId = MusicInfoHelper.getIdValue(name.orEmpty())
+            val lyricApiId = MusicInfoHelper.getMusicId(name.orEmpty())
             var lyricData = MusicInfoHelper.getLyricValue(lyricApiId)
             if (lyricData.isNullOrEmpty()) {
                 lyricData = "[999:99]暂无歌词"
